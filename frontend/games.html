@@ -207,10 +207,6 @@
         <div class="game-icon">🔢</div>
         <div class="game-name">Calcul Mental</div>
       </div>
-      <div class="game-card" onclick="lancerTicTac()">
-        <div class="game-icon">❌</div>
-        <div class="game-name">Tic Tac Toe</div>
-      </div>
       <div class="game-card" onclick="lancerMemory()">
         <div class="game-icon">🧠</div>
         <div class="game-name">Memory</div>
@@ -348,59 +344,6 @@
       document.getElementById('calc-score').textContent = `Score : ${calcScore} / ${calcTotal}`;
       setTimeout(prochainCalcul, 900);
     }
-
-    // ===== 4. TIC TAC TOE =====
-    let tttBoard, tttPlayer;
-    function lancerTicTac() {
-      tttBoard = Array(9).fill('');
-      tttPlayer = 'X';
-      ouvrirJeu(`
-        <h3>❌ Tic Tac Toe</h3>
-        <p id="ttt-status">Joueur : <strong>X</strong></p>
-        <div id="ttt-board"></div>
-        <button class="jeu-btn jeu-btn-gold" onclick="resetTicTac()">Rejouer</button>
-        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Fermer</button>
-      `);
-      renderTTT();
-    }
-    function renderTTT() {
-      const board = document.getElementById('ttt-board');
-      if (!board) return;
-      board.innerHTML = '';
-      board.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:1rem auto;max-width:240px;';
-      tttBoard.forEach((cell, i) => {
-        const btn = document.createElement('button');
-        btn.style.cssText = 'background:#2a2a35;border:2px solid var(--primary);border-radius:6px;height:70px;font-size:2rem;cursor:pointer;color:'+(cell==='X'?'#FFD700':'#ff6b6b');
-        btn.textContent = cell;
-        btn.onclick = () => jouerTTT(i);
-        board.appendChild(btn);
-      });
-    }
-    function jouerTTT(i) {
-      if (tttBoard[i] || checkTTT()) return;
-      tttBoard[i] = tttPlayer;
-      const winner = checkTTT();
-      const status = document.getElementById('ttt-status');
-      if (winner) {
-        if (status) status.innerHTML = `🏆 <strong>${winner}</strong> gagne !`;
-        renderTTT(); return;
-      }
-      if (tttBoard.every(c => c)) {
-        if (status) status.textContent = '🤝 Match nul !';
-        renderTTT(); return;
-      }
-      tttPlayer = tttPlayer === 'X' ? 'O' : 'X';
-      if (status) status.innerHTML = `Joueur : <strong>${tttPlayer}</strong>`;
-      renderTTT();
-    }
-    function checkTTT() {
-      const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-      for (const [a,b,c] of lines) {
-        if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[a] === tttBoard[c]) return tttBoard[a];
-      }
-      return null;
-    }
-    function resetTicTac() { tttBoard = Array(9).fill(''); tttPlayer = 'X'; const s = document.getElementById('ttt-status'); if(s) s.innerHTML='Joueur : <strong>X</strong>'; renderTTT(); }
 
     // ===== 5. MEMORY =====
     const EMOJIS = ['🦊','🐬','🦁','🐸','🦄','🐙','🐧','🦋'];
