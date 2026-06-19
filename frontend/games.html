@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TOKYO - Jeux Secrets</title>
+  <link rel="icon" type="image/svg+xml" href="assets/goku-icon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .games-header {
+      text-align: center;
+      padding: 1.5rem 1rem 0.5rem;
+    }
+    .games-header h2 {
+      font-size: 1.8rem;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.3rem;
+    }
+    .games-header p {
+      color: #888;
+      font-size: 0.85rem;
+    }
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+    .game-card {
+      background: linear-gradient(135deg, rgba(218,165,32,0.15), rgba(255,165,0,0.1));
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      padding: 1.2rem 0.8rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .game-card:hover {
+      background: linear-gradient(135deg, rgba(218,165,32,0.35), rgba(255,165,0,0.25));
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(218,165,32,0.35);
+    }
+    .game-icon { font-size: 2.2rem; }
+    .game-name { font-weight: 700; font-size: 0.85rem; color: #fff; }
+    .btn-back {
+      display: inline-block;
+      margin: 0.6rem 1rem;
+      padding: 0.45rem 1rem;
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-back:hover { background: rgba(218,165,32,0.15); }
+
+    /* ===== MODAL JEU ===== */
+    #modal-jeu {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    #modal-jeu.active { display: flex; }
+    .jeu-container {
+      background: var(--gray);
+      border: 3px solid var(--primary);
+      border-radius: 14px;
+      padding: 2rem;
+      max-width: 560px;
+      width: 92%;
+      max-height: 85vh;
+      overflow-y: auto;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(218,165,32,0.4);
+      position: relative;
+    }
+    .jeu-container h3 {
+      color: var(--gold-light);
+      font-size: 1.5rem;
+      margin-bottom: 1.2rem;
+    }
+    .jeu-container p { color: #ddd; margin-bottom: 0.8rem; font-size: 0.95rem; }
+    .jeu-btn {
+      padding: 0.6rem 1.2rem;
+      margin: 0.3rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      font-size: 0.9rem;
+    }
+    .jeu-btn:hover { transform: translateY(-2px); }
+    .jeu-btn-gold { background: linear-gradient(135deg,var(--primary),var(--orange)); color:#000; }
+    .jeu-btn-red  { background: #e74c3c; color:#fff; }
+    .jeu-btn-gray { background: #555; color:#fff; }
+    .btn-close-jeu {
+      position: absolute;
+      top: 0.7rem; right: 0.8rem;
+      background: var(--primary); color:#000;
+      border: none; border-radius: 50%;
+      width: 28px; height: 28px;
+      font-size: 1rem; cursor: pointer; font-weight: 900;
+    }
+    /* Tic Tac Toe board */
+    #ttt-board {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 1rem auto;
+      max-width: 240px;
+    }
+    .ttt-cell {
+      background: #2a2a35;
+      border: 2px solid var(--primary);
+      border-radius: 6px;
+      height: 70px;
+      font-size: 2rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .ttt-cell:hover { background: rgba(218,165,32,0.2); }
+    /* Memory */
+    #memory-board {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 8px;
+      margin: 1rem auto;
+      max-width: 300px;
+    }
+    .mem-card {
+      height: 65px;
+      background: #2a2a35;
+      border: 2px solid var(--primary);
+      border-radius: 6px;
+      font-size: 1.8rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .mem-card.revealed { background: rgba(218,165,32,0.25); }
+    .mem-card.matched  { background: rgba(46,204,113,0.25); border-color: #2ecc71; cursor: default; }
+    /* Blackjack cards */
+    .bj-hand { font-size: 1.3rem; letter-spacing: 3px; margin: 0.5rem 0; min-height: 2rem; }
+    /* Pendu */
+    #pendu-word { font-size: 1.6rem; letter-spacing: 0.5rem; color: var(--gold-light); margin: 0.8rem 0; }
+    #pendu-lettres { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 0.8rem; }
+    .pendu-btn {
+      width: 34px; height: 34px;
+      background: #2a2a35;
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      color: var(--gold-light);
+      font-weight: 700; font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .pendu-btn:disabled { opacity: 0.3; cursor: default; }
+    /* Roulette */
+    #roulette-result { font-size: 3rem; margin: 1rem 0; min-height: 4rem; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <img src="assets/saros.jpg" alt="TOKYO Logo" />
+    <h1>TOKYO</h1>
+  </header>
+
+  <!-- MAIN -->
+  <main style="flex-direction: column; overflow-y: auto;">
+    <a href="chat.html" class="btn-back">← Retour au chat</a>
+
+    <div class="games-header">
+      <h2>🎮 PAGE SECRÈTE 🎮</h2>
+      <p>10 mini-jeux cachés — chut ! 🤫</p>
+    </div>
+
+    <div class="games-grid">
+      <div class="game-card" onclick="lancerDe()">
+        <div class="game-icon">🎲</div>
+        <div class="game-name">Lancé de dé</div>
+      </div>
+      <div class="game-card" onclick="lancerDevineNombre()">
+        <div class="game-icon">🎯</div>
+        <div class="game-name">Devine le nombre</div>
+      </div>
+      <div class="game-card" onclick="lancerCalcul()">
+        <div class="game-icon">🔢</div>
+        <div class="game-name">Calcul Mental</div>
+      </div>
+      <div class="game-card" onclick="lancerTicTac()">
+        <div class="game-icon">❌</div>
+        <div class="game-name">Tic Tac Toe</div>
+      </div>
+      <div class="game-card" onclick="lancerMemory()">
+        <div class="game-icon">🧠</div>
+        <div class="game-name">Memory</div>
+      </div>
+      <div class="game-card" onclick="lancerQuiz()">
+        <div class="game-icon">❓</div>
+        <div class="game-name">Quiz</div>
+      </div>
+      <div class="game-card" onclick="lancerBlackjack()">
+        <div class="game-icon">🎰</div>
+        <div class="game-name">Blackjack</div>
+      </div>
+      <div class="game-card" onclick="lancerPendu()">
+        <div class="game-icon">🪢</div>
+        <div class="game-name">Pendu</div>
+      </div>
+      <div class="game-card" onclick="lancerRoulette()">
+        <div class="game-icon">🎡</div>
+        <div class="game-name">Roulette</div>
+      </div>
+      <div class="game-card" onclick="lancerPlusOuMoins()">
+        <div class="game-icon">🃏</div>
+        <div class="game-name">Plus ou Moins</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL JEU -->
+  <div id="modal-jeu">
+    <div class="jeu-container" id="jeu-contenu">
+      <button class="btn-close-jeu" onclick="fermerJeu()">✕</button>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('modal-jeu');
+    const contenu = document.getElementById('jeu-contenu');
+
+    function ouvrirJeu(html) {
+      contenu.innerHTML = '<button class="btn-close-jeu" onclick="fermerJeu()">✕</button>' + html;
+      modal.classList.add('active');
+    }
+    function fermerJeu() {
+      modal.classList.remove('active');
+      contenu.innerHTML = '<button class="btn-close-jeu" onclick="fermerJeu()">✕</button>';
+    }
+
+    // ===== 1. DÉ =====
+    function lancerDe() {
+      ouvrirJeu(`
+        <h3>🎲 Lancé de dé</h3>
+        <div id="de-result" style="font-size:4rem;margin:1rem 0">❓</div>
+        <p id="de-msg"></p>
+        <button class="jeu-btn jeu-btn-gold" onclick="roulerDe()">🎲 Lancer !</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Fermer</button>
+      `);
+    }
+    function roulerDe() {
+      const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+      const val = Math.floor(Math.random() * 6);
+      document.getElementById('de-result').textContent = faces[val];
+      document.getElementById('de-msg').textContent = `Tu as obtenu ${val + 1} !`;
+    }
+
+    // ===== 2. DEVINE LE NOMBRE =====
+    let devineSecret, devineEssais;
+    function lancerDevineNombre() {
+      devineSecret = Math.floor(Math.random() * 100) + 1;
+      devineEssais = 0;
+      ouvrirJeu(`
+        <h3>🎯 Devine le nombre</h3>
+        <p>Je pense à un nombre entre <strong>1 et 100</strong></p>
+        <input id="devine-input" type="number" min="1" max="100"
+          style="padding:0.5rem;font-size:1rem;border-radius:6px;border:2px solid var(--primary);background:#1a1a25;color:#fff;width:100px;text-align:center"
+          onkeypress="if(event.key==='Enter')devinerNombre()" />
+        <br><br>
+        <button class="jeu-btn jeu-btn-gold" onclick="devinerNombre()">Valider</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Abandonner</button>
+        <p id="devine-msg" style="margin-top:1rem;font-size:1.1rem"></p>
+      `);
+      setTimeout(() => document.getElementById('devine-input').focus(), 100);
+    }
+    function devinerNombre() {
+      const val = parseInt(document.getElementById('devine-input').value);
+      if (!val || val < 1 || val > 100) return;
+      devineEssais++;
+      const msg = document.getElementById('devine-msg');
+      if (val === devineSecret) {
+        msg.innerHTML = `🏆 Bravo ! C'était <strong>${devineSecret}</strong> en ${devineEssais} essai(s) !`;
+      } else if (val < devineSecret) {
+        msg.textContent = `📈 Plus grand ! (essai ${devineEssais})`;
+      } else {
+        msg.textContent = `📉 Plus petit ! (essai ${devineEssais})`;
+      }
+      document.getElementById('devine-input').value = '';
+      document.getElementById('devine-input').focus();
+    }
+
+    // ===== 3. CALCUL MENTAL =====
+    let calcScore, calcTotal, calcA, calcB, calcOp;
+    function lancerCalcul() {
+      calcScore = 0; calcTotal = 0;
+      ouvrirJeu(`
+        <h3>🔢 Calcul Mental</h3>
+        <div id="calc-question" style="font-size:1.8rem;color:var(--gold-light);margin:0.8rem 0"></div>
+        <input id="calc-input" type="number"
+          style="padding:0.5rem;font-size:1rem;border-radius:6px;border:2px solid var(--primary);background:#1a1a25;color:#fff;width:100px;text-align:center"
+          onkeypress="if(event.key==='Enter')validerCalcul()" />
+        <br><br>
+        <button class="jeu-btn jeu-btn-gold" onclick="validerCalcul()">Valider</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Quitter</button>
+        <p id="calc-msg" style="margin-top:0.8rem"></p>
+        <p id="calc-score" style="color:var(--gold-light)">Score : 0 / 0</p>
+      `);
+      prochainCalcul();
+    }
+    function prochainCalcul() {
+      const ops = ['+', '-', '×'];
+      calcOp = ops[Math.floor(Math.random() * 3)];
+      calcA = Math.floor(Math.random() * 20) + 1;
+      calcB = Math.floor(Math.random() * (calcOp === '×' ? 10 : 20)) + 1;
+      if (calcOp === '-' && calcB > calcA) [calcA, calcB] = [calcB, calcA];
+      document.getElementById('calc-question').textContent = `${calcA} ${calcOp} ${calcB} = ?`;
+      document.getElementById('calc-input').value = '';
+      setTimeout(() => document.getElementById('calc-input').focus(), 50);
+    }
+    function validerCalcul() {
+      const rep = parseInt(document.getElementById('calc-input').value);
+      if (isNaN(rep)) return;
+      const correct = calcOp === '+' ? calcA + calcB : calcOp === '-' ? calcA - calcB : calcA * calcB;
+      calcTotal++;
+      const msg = document.getElementById('calc-msg');
+      if (rep === correct) { calcScore++; msg.textContent = '✅ Correct !'; }
+      else { msg.textContent = `❌ C'était ${correct}`; }
+      document.getElementById('calc-score').textContent = `Score : ${calcScore} / ${calcTotal}`;
+      setTimeout(prochainCalcul, 900);
+    }
+
+    // ===== 4. TIC TAC TOE =====
+    let tttBoard, tttPlayer;
+    function lancerTicTac() {
+      tttBoard = Array(9).fill('');
+      tttPlayer = 'X';
+      ouvrirJeu(`
+        <h3>❌ Tic Tac Toe</h3>
+        <p id="ttt-status">Joueur : <strong>X</strong></p>
+        <div id="ttt-board"></div>
+        <button class="jeu-btn jeu-btn-gold" onclick="resetTicTac()">Rejouer</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Fermer</button>
+      `);
+      renderTTT();
+    }
+    function renderTTT() {
+      const board = document.getElementById('ttt-board');
+      if (!board) return;
+      board.innerHTML = '';
+      board.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:1rem auto;max-width:240px;';
+      tttBoard.forEach((cell, i) => {
+        const btn = document.createElement('button');
+        btn.style.cssText = 'background:#2a2a35;border:2px solid var(--primary);border-radius:6px;height:70px;font-size:2rem;cursor:pointer;color:'+(cell==='X'?'#FFD700':'#ff6b6b');
+        btn.textContent = cell;
+        btn.onclick = () => jouerTTT(i);
+        board.appendChild(btn);
+      });
+    }
+    function jouerTTT(i) {
+      if (tttBoard[i] || checkTTT()) return;
+      tttBoard[i] = tttPlayer;
+      const winner = checkTTT();
+      const status = document.getElementById('ttt-status');
+      if (winner) {
+        if (status) status.innerHTML = `🏆 <strong>${winner}</strong> gagne !`;
+        renderTTT(); return;
+      }
+      if (tttBoard.every(c => c)) {
+        if (status) status.textContent = '🤝 Match nul !';
+        renderTTT(); return;
+      }
+      tttPlayer = tttPlayer === 'X' ? 'O' : 'X';
+      if (status) status.innerHTML = `Joueur : <strong>${tttPlayer}</strong>`;
+      renderTTT();
+    }
+    function checkTTT() {
+      const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      for (const [a,b,c] of lines) {
+        if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[a] === tttBoard[c]) return tttBoard[a];
+      }
+      return null;
+    }
+    function resetTicTac() { tttBoard = Array(9).fill(''); tttPlayer = 'X'; const s = document.getElementById('ttt-status'); if(s) s.innerHTML='Joueur : <strong>X</strong>'; renderTTT(); }
+
+    // ===== 5. MEMORY =====
+    const EMOJIS = ['🦊','🐬','🦁','🐸','🦄','🐙','🐧','🦋'];
+    let memCards, memFlipped, memMatched, memLocked;
+    function lancerMemory() {
+      const pairs = [...EMOJIS, ...EMOJIS].sort(() => Math.random() - 0.5);
+      memCards = pairs; memFlipped = []; memMatched = 0; memLocked = false;
+      ouvrirJeu(`
+        <h3>🧠 Memory</h3>
+        <p>Trouve les 8 paires !</p>
+        <div id="memory-board" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:1rem auto;max-width:300px;"></div>
+        <p id="mem-msg"></p>
+        <button class="jeu-btn jeu-btn-gold" onclick="lancerMemory()">Rejouer</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Fermer</button>
+      `);
+      renderMemory(pairs);
+    }
+    function renderMemory(pairs) {
+      const board = document.getElementById('memory-board');
+      if (!board) return;
+      board.innerHTML = '';
+      pairs.forEach((emoji, i) => {
+        const card = document.createElement('div');
+        card.style.cssText = 'height:65px;background:#2a2a35;border:2px solid var(--primary);border-radius:6px;font-size:1.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:all 0.2s;';
+        card.dataset.index = i;
+        card.dataset.emoji = emoji;
+        card.textContent = '❓';
+        card.onclick = () => retournerCarte(card);
+        board.appendChild(card);
+      });
+    }
+    function retournerCarte(card) {
+      if (memLocked || card.textContent !== '❓' || card.style.borderColor === 'rgb(46, 204, 113)') return;
+      card.textContent = card.dataset.emoji;
+      card.style.background = 'rgba(218,165,32,0.25)';
+      memFlipped.push(card);
+      if (memFlipped.length === 2) {
+        memLocked = true;
+        if (memFlipped[0].dataset.emoji === memFlipped[1].dataset.emoji) {
+          memFlipped.forEach(c => { c.style.background='rgba(46,204,113,0.25)'; c.style.borderColor='#2ecc71'; c.onclick=null; });
+          memMatched++;
+          memFlipped = []; memLocked = false;
+          if (memMatched === 8) { const m=document.getElementById('mem-msg'); if(m) m.textContent='🏆 Gagné !'; }
+        } else {
+          setTimeout(() => {
+            memFlipped.forEach(c => { c.textContent='❓'; c.style.background='#2a2a35'; });
+            memFlipped = []; memLocked = false;
+          }, 900);
+        }
+      }
+    }
+
+    // ===== 6. QUIZ =====
+    const QUESTIONS = [
+      { q:'Quelle est la capitale de la France ?', r:['Paris','Lyon','Marseille','Bordeaux'], ok:0 },
+      { q:'Combien font 7 × 8 ?',                 r:['54','56','48','64'],                  ok:1 },
+      { q:'Quel est le plus grand océan ?',         r:['Atlantique','Indien','Arctique','Pacifique'], ok:3 },
+      { q:'En quelle année la Tour Eiffel a-t-elle été construite ?', r:['1889','1900','1875','1912'], ok:0 },
+      { q:'Quel est le symbole chimique de l\'eau ?', r:['O2','HO','H2O','CO2'], ok:2 },
+      { q:'Combien y a-t-il de continents ?',       r:['5','6','7','8'],                    ok:2 },
+      { q:'Qui a peint la Joconde ?',               r:['Picasso','Monet','Léonard de Vinci','Raphaël'], ok:2 },
+      { q:'Quelle planète est la plus proche du Soleil ?', r:['Vénus','Mars','Mercure','Terre'], ok:2 },
+    ];
+    let quizIndex, quizScore;
+    function lancerQuiz() {
+      quizIndex = 0; quizScore = 0;
+      const shuffled = [...QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
+      window._quizQuestions = shuffled;
+      afficherQuestion();
+    }
+    function afficherQuestion() {
+      const qs = window._quizQuestions;
+      if (quizIndex >= qs.length) {
+        ouvrirJeu(`
+          <h3>❓ Quiz terminé !</h3>
+          <p style="font-size:2rem">🏆 ${quizScore} / ${qs.length}</p>
+          <p>${quizScore >= 4 ? 'Excellent !' : quizScore >= 2 ? 'Pas mal !' : 'Entraîne-toi encore !'}</p>
+          <button class="jeu-btn jeu-btn-gold" onclick="lancerQuiz()">Rejouer</button>
+          <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Fermer</button>
+        `); return;
+      }
+      const q = qs[quizIndex];
+      const btns = q.r.map((rep, i) =>
+        `<button class="jeu-btn jeu-btn-gray" style="display:block;width:100%;margin:0.3rem 0;" onclick="repondreQuiz(${i})">${rep}</button>`
+      ).join('');
+      ouvrirJeu(`
+        <h3>❓ Quiz</h3>
+        <p style="color:var(--gold-light);font-size:0.8rem">Question ${quizIndex+1} / ${qs.length} — Score : ${quizScore}</p>
+        <p style="font-size:1rem;margin:1rem 0"><strong>${q.q}</strong></p>
+        ${btns}
+      `);
+    }
+    function repondreQuiz(i) {
+      const q = window._quizQuestions[quizIndex];
+      if (i === q.ok) quizScore++;
+      quizIndex++;
+      afficherQuestion();
+    }
+
+    // ===== 7. BLACKJACK =====
+    const CARTES = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    function valCarte(c) { return ['J','Q','K'].includes(c)?10:c==='A'?11:parseInt(c); }
+    function tirerCarte() { return CARTES[Math.floor(Math.random()*13)]; }
+    function totalMain(main) {
+      let t = main.reduce((s,c)=>s+valCarte(c),0);
+      let as = main.filter(c=>c==='A').length;
+      while (t>21 && as-->0) t-=10;
+      return t;
+    }
+    let bjJoueur, bjCroupier;
+    function lancerBlackjack() {
+      bjJoueur  = [tirerCarte(), tirerCarte()];
+      bjCroupier = [tirerCarte(), tirerCarte()];
+      renderBJ();
+    }
+    function renderBJ(fin=false) {
+      const tj = totalMain(bjJoueur);
+      const tc = totalMain(bjCroupier);
+      let msg = '';
+      if (fin) {
+        if (tj > 21) msg = '❌ Tu as dépassé 21 ! Le croupier gagne.';
+        else if (tc > 21) msg = '🏆 Le croupier dépasse 21 ! Tu gagnes !';
+        else if (tj > tc)  msg = '🏆 Tu gagnes !';
+        else if (tj < tc)  msg = '😔 Le croupier gagne.';
+        else               msg = '🤝 Égalité !';
+      }
+      ouvrirJeu(`
+        <h3>🎰 Blackjack</h3>
+        <p>Croupier : <span style="font-size:1.3rem">${fin ? bjCroupier.join(' ') : bjCroupier[0]+' 🂠'}</span>${fin?' ('+tc+')':''}</p>
+        <hr style="border-color:rgba(218,165,32,0.2);margin:0.7rem 0">
+        <p>Toi : <span style="font-size:1.3rem">${bjJoueur.join(' ')}</span> (${tj})</p>
+        ${msg ? `<p style="font-size:1.1rem;color:var(--gold-light);margin:0.8rem 0"><strong>${msg}</strong></p>` : ''}
+        ${!fin && tj<=21 ? `
+          <button class="jeu-btn jeu-btn-gold" onclick="bjTirer()">Tirer une carte</button>
+          <button class="jeu-btn jeu-btn-red"  onclick="bjRester()">Rester</button>
+        ` : `
+          <button class="jeu-btn jeu-btn-gold" onclick="lancerBlackjack()">Rejouer</button>
+        `}
+        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Fermer</button>
+      `);
+    }
+    function bjTirer() { bjJoueur.push(tirerCarte()); renderBJ(totalMain(bjJoueur)>21); }
+    function bjRester() {
+      while (totalMain(bjCroupier) < 17) bjCroupier.push(tirerCarte());
+      renderBJ(true);
+    }
+
+    // ===== 8. PENDU =====
+    const MOTS = ['JAVASCRIPT','ORDINATEUR','CHATBOT','INTELLIGENCE','PROGRAMME','CLAVIER','SOURIS','ECRAN','TOKYO','ALGORITHME'];
+    let penduMot, penduTentatives, penduLettres;
+    function lancerPendu() {
+      penduMot = MOTS[Math.floor(Math.random()*MOTS.length)];
+      penduTentatives = 6; penduLettres = new Set();
+      renderPendu();
+    }
+    function renderPendu() {
+      const affichage = penduMot.split('').map(l => penduLettres.has(l) ? l : '_').join(' ');
+      const gagne = !affichage.includes('_');
+      const perdu = penduTentatives <= 0;
+      const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const btns = alpha.split('').map(l =>
+        `<button class="pendu-btn" onclick="jouerPendu('${l}')" id="pb-${l}" ${penduLettres.has(l)?'disabled':''}>${l}</button>`
+      ).join('');
+      ouvrirJeu(`
+        <h3>🪢 Pendu</h3>
+        <p>Vies restantes : ${'❤️'.repeat(penduTentatives)}${'🖤'.repeat(6-penduTentatives)}</p>
+        <div style="font-size:1.6rem;letter-spacing:0.5rem;color:var(--gold-light);margin:0.8rem 0">${affichage}</div>
+        ${gagne ? '<p style="color:#2ecc71;font-size:1.1rem">🏆 Gagné !</p>' : ''}
+        ${perdu ? `<p style="color:#e74c3c;font-size:1.1rem">💀 Perdu ! C'était <strong>${penduMot}</strong></p>` : ''}
+        ${(!gagne && !perdu) ? `<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:0.8rem">${btns}</div>` : ''}
+        <br>
+        <button class="jeu-btn jeu-btn-gold" onclick="lancerPendu()">Rejouer</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Fermer</button>
+      `);
+    }
+    function jouerPendu(l) {
+      penduLettres.add(l);
+      if (!penduMot.includes(l)) penduTentatives--;
+      renderPendu();
+    }
+
+    // ===== 9. ROULETTE =====
+    const COULEURS_R = ['🔴','⚫','🔴','⚫','🔴','⚫','🟢'];
+    function lancerRoulette() {
+      ouvrirJeu(`
+        <h3>🎡 Roulette</h3>
+        <p>Parie sur une couleur !</p>
+        <div id="roulette-result" style="font-size:3rem;margin:1rem 0;min-height:4rem">❓</div>
+        <p id="roulette-msg"></p>
+        <div>
+          <button class="jeu-btn jeu-btn-red"  onclick="jouerRoulette('🔴')">🔴 Rouge</button>
+          <button class="jeu-btn jeu-btn-gray"  onclick="jouerRoulette('⚫')">⚫ Noir</button>
+          <button class="jeu-btn jeu-btn-gold" onclick="jouerRoulette('🟢')">🟢 Vert (×5)</button>
+        </div>
+        <button class="jeu-btn jeu-btn-gray" style="margin-top:1rem" onclick="fermerJeu()">Fermer</button>
+      `);
+    }
+    function jouerRoulette(pari) {
+      const result = COULEURS_R[Math.floor(Math.random()*COULEURS_R.length)];
+      const r = document.getElementById('roulette-result');
+      const m = document.getElementById('roulette-msg');
+      if (r) r.textContent = result;
+      if (m) {
+        if (result === pari) m.textContent = pari === '🟢' ? '🏆 JACKPOT ! ×5 !' : '🏆 Gagné !';
+        else m.textContent = '😔 Perdu, retente ta chance !';
+      }
+    }
+
+    // ===== 10. PLUS OU MOINS =====
+    let pomCarte;
+    function lancerPlusOuMoins() {
+      pomCarte = Math.floor(Math.random()*13)+1;
+      renderPoM();
+    }
+    function renderPoM(msg='') {
+      const nom = ['','A','2','3','4','5','6','7','8','9','10','J','Q','K'][pomCarte];
+      ouvrirJeu(`
+        <h3>🃏 Plus ou Moins</h3>
+        <p>La prochaine carte sera-t-elle plus haute ou plus basse ?</p>
+        <div style="font-size:3.5rem;margin:1rem 0">${nom}</div>
+        ${msg ? `<p style="font-size:1.1rem;color:var(--gold-light)">${msg}</p>` : ''}
+        <button class="jeu-btn jeu-btn-gold" onclick="jouerPoM('plus')">📈 Plus haute</button>
+        <button class="jeu-btn jeu-btn-red"  onclick="jouerPoM('moins')">📉 Plus basse</button>
+        <br>
+        <button class="jeu-btn jeu-btn-gray" style="margin-top:0.5rem" onclick="fermerJeu()">Fermer</button>
+      `);
+    }
+    function jouerPoM(choix) {
+      const ancienne = pomCarte;
+      pomCarte = Math.floor(Math.random()*13)+1;
+      const nom = ['','A','2','3','4','5','6','7','8','9','10','J','Q','K'][pomCarte];
+      let msg;
+      if (pomCarte > ancienne) msg = choix==='plus' ? `✅ ${nom} — Correct !` : `❌ ${nom} — Raté !`;
+      else if (pomCarte < ancienne) msg = choix==='moins' ? `✅ ${nom} — Correct !` : `❌ ${nom} — Raté !`;
+      else msg = `🤝 ${nom} — Égalité !`;
+      renderPoM(msg);
+    }
+  </script>
+</body>
+</html>
