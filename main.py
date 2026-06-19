@@ -25,7 +25,7 @@ load_env_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 
 # ===== CONFIGURATION =====
 API_HOST = '0.0.0.0'
-API_PORT = 8000
+API_PORT = int(os.getenv('PORT', 8000))
 
 # ===== BLAGUES =====
 BLAGUES = [
@@ -94,7 +94,7 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         """Traite les requêtes GET"""
-        if self.path == '/health':
+        if self.path in ('/', '/health'):
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
