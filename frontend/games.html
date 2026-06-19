@@ -207,6 +207,10 @@
         <div class="game-icon">🦍</div>
         <div class="game-name">Donkey Kong</div>
       </div>
+      <div class="game-card" onclick="lancerPacman()">
+        <div class="game-icon">👻</div>
+        <div class="game-name">Pac-Man</div>
+      </div>
       <div class="game-card" onclick="lancerMemory()">
         <div class="game-icon">🧠</div>
         <div class="game-name">Memory</div>
@@ -821,6 +825,223 @@
       else if (pomCarte < ancienne) msg = choix==='moins' ? `✅ ${nom} — Correct !` : `❌ ${nom} — Raté !`;
       else msg = `🤝 ${nom} — Égalité !`;
       renderPoM(msg);
+    }
+
+    // ===== PAC-MAN =====
+    let pmRAF, pmRunning, pmKeys2;
+    // 1=wall 0=dot 2=empty 3=power pellet
+    const PM_MAP_TEMPLATE = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+      [1,3,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,3,1],
+      [1,0,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1],
+      [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+      [1,1,1,1,0,1,1,1,2,2,2,2,2,1,1,1,0,1,1,1,1],
+      [2,2,2,1,0,1,2,2,2,2,2,2,2,2,2,1,0,1,2,2,2],
+      [1,1,1,1,0,1,2,1,1,2,2,2,1,1,2,1,0,1,1,1,1],
+      [2,2,2,2,0,2,2,1,2,2,2,2,2,1,2,2,0,2,2,2,2],
+      [1,1,1,1,0,1,2,1,1,1,1,1,1,1,2,1,0,1,1,1,1],
+      [2,2,2,1,0,1,2,2,2,2,2,2,2,2,2,1,0,1,2,2,2],
+      [1,1,1,1,0,1,2,1,1,1,1,1,1,1,2,1,0,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,0,1],
+      [1,3,0,1,0,0,0,0,0,0,2,0,0,0,0,0,0,1,0,3,1],
+      [1,1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,0,1,1],
+      [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+      [1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    ];
+    const PM_COLS = 21, PM_ROWS = 22, PM_CELL = 20;
+
+    function lancerPacman() {
+      ouvrirJeu(`
+        <h3>👻 Pac-Man</h3>
+        <p>Flèches / ZQSD pour bouger — mange tous les points !</p>
+        <canvas id="pm-canvas" width="${PM_COLS*PM_CELL}" height="${PM_ROWS*PM_CELL}"
+          style="border:2px solid var(--primary);border-radius:8px;display:block;margin:0.6rem auto;max-width:100%"></canvas>
+        <p>Score : <strong id="pm-score">0</strong> &nbsp; Vies : <strong id="pm-lives">3</strong></p>
+        <button class="jeu-btn jeu-btn-gold" id="pm-start" onclick="startPacman()">▶ Démarrer</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="stopPacman();fermerJeu()">Fermer</button>
+      `);
+    }
+
+    function startPacman() {
+      stopPacman();
+      const btn = document.getElementById('pm-start');
+      if (btn) btn.textContent = '🔄 Rejouer';
+      pmRunning = true; pmKeys2 = {};
+
+      const canvas = document.getElementById('pm-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      // Deep copy map
+      const map = PM_MAP_TEMPLATE.map(r => [...r]);
+      let totalDots = map.flat().filter(c => c===0||c===3).length;
+      let dotsEaten = 0;
+
+      // Pac-Man state
+      let pac = { x:10, y:16, dx:0, dy:0, nextDx:0, nextDy:0, mouth:0.2, mouthDir:1 };
+      let lives = 3, score = 0, powered = 0;
+
+      // Ghosts
+      const GHOST_COLORS = ['#FF0000','#FFB8FF','#00FFFF','#FFB852'];
+      let ghosts = [
+        { x:9,  y:9,  dx:1, dy:0, color:GHOST_COLORS[0] },
+        { x:11, y:9,  dx:-1,dy:0, color:GHOST_COLORS[1] },
+        { x:9,  y:11, dx:0, dy:1, color:GHOST_COLORS[2] },
+        { x:11, y:11, dx:0, dy:-1,color:GHOST_COLORS[3] },
+      ];
+
+      function canMove(x, y) {
+        if (x < 0 || x >= PM_COLS || y < 0 || y >= PM_ROWS) return true; // tunnel
+        return map[y][x] !== 1;
+      }
+
+      function kd(e) {
+        const m = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1],
+                   KeyA:[-1,0],KeyD:[1,0],KeyW:[0,-1],KeyS:[0,1],
+                   KeyQ:[-1,0],KeyZ:[0,-1]};
+        if (m[e.code]) { pac.nextDx=m[e.code][0]; pac.nextDy=m[e.code][1]; e.preventDefault(); }
+      }
+      function ku(e) { pmKeys2[e.code]=false; }
+      document.addEventListener('keydown', kd);
+      document.addEventListener('keyup', ku);
+
+      let frame2 = 0;
+      function loop() {
+        if (!pmRunning) return;
+        pmRAF = requestAnimationFrame(loop);
+        frame2++;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, PM_COLS*PM_CELL, PM_ROWS*PM_CELL);
+
+        // Draw map
+        for (let r=0; r<PM_ROWS; r++) {
+          for (let c=0; c<PM_COLS; c++) {
+            const cx = c*PM_CELL, cy = r*PM_CELL;
+            if (map[r][c]===1) {
+              ctx.fillStyle='#0000CC'; ctx.fillRect(cx,cy,PM_CELL,PM_CELL);
+              ctx.strokeStyle='#4444FF'; ctx.lineWidth=1; ctx.strokeRect(cx+1,cy+1,PM_CELL-2,PM_CELL-2);
+            } else if (map[r][c]===0) {
+              ctx.fillStyle='#FFD700'; ctx.beginPath();
+              ctx.arc(cx+PM_CELL/2, cy+PM_CELL/2, 2.5, 0, Math.PI*2); ctx.fill();
+            } else if (map[r][c]===3) {
+              ctx.fillStyle='#FFD700'; ctx.beginPath();
+              ctx.arc(cx+PM_CELL/2, cy+PM_CELL/2, 6, 0, Math.PI*2); ctx.fill();
+            }
+          }
+        }
+
+        // Move pac-man every 4 frames
+        if (frame2 % 4 === 0) {
+          const nx = pac.x + pac.nextDx, ny = pac.y + pac.nextDy;
+          if (canMove(nx, ny)) { pac.dx = pac.nextDx; pac.dy = pac.nextDy; }
+          let mx = pac.x + pac.dx, my = pac.y + pac.dy;
+          mx = ((mx % PM_COLS) + PM_COLS) % PM_COLS;
+          my = ((my % PM_ROWS) + PM_ROWS) % PM_ROWS;
+          if (canMove(mx, my)) { pac.x = mx; pac.y = my; }
+
+          // Eat dot
+          if (map[pac.y][pac.x] === 0) { map[pac.y][pac.x]=2; score+=10; dotsEaten++; const s=document.getElementById('pm-score'); if(s) s.textContent=score; }
+          if (map[pac.y][pac.x] === 3) { map[pac.y][pac.x]=2; score+=50; dotsEaten++; powered=60; const s=document.getElementById('pm-score'); if(s) s.textContent=score; }
+          if (powered>0) powered--;
+
+          // Win
+          if (dotsEaten >= totalDots) {
+            pmRunning = false;
+            ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,PM_COLS*PM_CELL,PM_ROWS*PM_CELL);
+            ctx.fillStyle='#FFD700'; ctx.font='bold 22px Arial'; ctx.textAlign='center';
+            ctx.fillText('🏆 GAGNÉ !', PM_COLS*PM_CELL/2, PM_ROWS*PM_CELL/2);
+            ctx.font='15px Arial'; ctx.fillText('Score : '+score, PM_COLS*PM_CELL/2, PM_ROWS*PM_CELL/2+26);
+            ctx.textAlign='left'; return;
+          }
+        }
+
+        // Move ghosts every 8 frames
+        if (frame2 % 8 === 0) {
+          ghosts.forEach(g => {
+            const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+            const valid = dirs.filter(([dx,dy]) => {
+              const nx=((g.x+dx)%PM_COLS+PM_COLS)%PM_COLS;
+              const ny=((g.y+dy)%PM_ROWS+PM_ROWS)%PM_ROWS;
+              return canMove(nx,ny) && !(dx===-g.dx&&dy===-g.dy);
+            });
+            if (valid.length > 0) {
+              let chosen;
+              if (powered > 0) {
+                // Flee from pac
+                chosen = valid.reduce((best,d) => {
+                  const dx=(g.x+d[0]-pac.x), dy=(g.y+d[1]-pac.y);
+                  const bd=(g.x+best[0]-pac.x), bdy=(g.y+best[1]-pac.y);
+                  return (dx*dx+dy*dy > bd*bd+bdy*bdy) ? d : best;
+                });
+              } else {
+                // Chase pac 70%, random 30%
+                chosen = Math.random()<0.7 ? valid.reduce((best,d) => {
+                  const dx=g.x+d[0]-pac.x, dy=g.y+d[1]-pac.y;
+                  const bd=g.x+best[0]-pac.x, bdy=g.y+best[1]-pac.y;
+                  return (dx*dx+dy*dy < bd*bd+bdy*bdy) ? d : best;
+                }) : valid[Math.floor(Math.random()*valid.length)];
+              }
+              g.dx=chosen[0]; g.dy=chosen[1];
+              g.x=((g.x+g.dx)%PM_COLS+PM_COLS)%PM_COLS;
+              g.y=((g.y+g.dy)%PM_ROWS+PM_ROWS)%PM_ROWS;
+            }
+          });
+        }
+
+        // Draw pac-man
+        const px = pac.x*PM_CELL+PM_CELL/2, py = pac.y*PM_CELL+PM_CELL/2;
+        pac.mouth += 0.15 * pac.mouthDir;
+        if (pac.mouth > 0.35 || pac.mouth < 0.02) pac.mouthDir *= -1;
+        const angle = Math.atan2(pac.dy, pac.dx||1);
+        ctx.fillStyle='#FFD700'; ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.arc(px, py, PM_CELL/2-1, angle+pac.mouth, angle+Math.PI*2-pac.mouth);
+        ctx.closePath(); ctx.fill();
+
+        // Draw ghosts
+        ghosts.forEach(g => {
+          const gx=g.x*PM_CELL, gy=g.y*PM_CELL, r=PM_CELL/2-1;
+          ctx.fillStyle = powered>0 ? '#0000FF' : g.color;
+          ctx.beginPath(); ctx.arc(gx+PM_CELL/2, gy+r+1, r, Math.PI, 0);
+          ctx.lineTo(gx+PM_CELL, gy+PM_CELL);
+          for (let i=0;i<3;i++) { ctx.arc(gx+PM_CELL-r*2/3*(i+0.5), gy+PM_CELL, r/3, 0, Math.PI, true); }
+          ctx.lineTo(gx, gy+PM_CELL); ctx.closePath(); ctx.fill();
+          if (powered<=0) {
+            ctx.fillStyle='#fff';
+            ctx.fillRect(gx+4,gy+6,5,5); ctx.fillRect(gx+11,gy+6,5,5);
+            ctx.fillStyle='#00f';
+            ctx.fillRect(gx+5,gy+7,3,3); ctx.fillRect(gx+12,gy+7,3,3);
+          }
+
+          // Collision
+          if (g.x===pac.x && g.y===pac.y) {
+            if (powered>0) { score+=200; ghosts=ghosts.filter(gh=>gh!==g); const s=document.getElementById('pm-score'); if(s) s.textContent=score; }
+            else {
+              lives--; const lv=document.getElementById('pm-lives'); if(lv) lv.textContent=lives;
+              pac.x=10; pac.y=16; pac.dx=0; pac.dy=0;
+              ghosts=[{x:9,y:9,dx:1,dy:0,color:GHOST_COLORS[0]},{x:11,y:9,dx:-1,dy:0,color:GHOST_COLORS[1]},{x:9,y:11,dx:0,dy:1,color:GHOST_COLORS[2]},{x:11,y:11,dx:0,dy:-1,color:GHOST_COLORS[3]}];
+              if (lives<=0) {
+                pmRunning=false;
+                ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,PM_COLS*PM_CELL,PM_ROWS*PM_CELL);
+                ctx.fillStyle='#FFD700'; ctx.font='bold 22px Arial'; ctx.textAlign='center';
+                ctx.fillText('💀 GAME OVER', PM_COLS*PM_CELL/2, PM_ROWS*PM_CELL/2);
+                ctx.font='15px Arial'; ctx.fillText('Score : '+score, PM_COLS*PM_CELL/2, PM_ROWS*PM_CELL/2+26);
+                ctx.textAlign='left';
+              }
+            }
+          }
+        });
+      }
+      pmRAF = requestAnimationFrame(loop);
+    }
+    function stopPacman() {
+      pmRunning = false;
+      cancelAnimationFrame(pmRAF);
     }
   </script>
 </body>
