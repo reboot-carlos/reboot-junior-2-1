@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-TOKYO Chatbot API Server
-Backend pour le chatbot TOKYO avec support multi-personnalités
+TOKYO Chatbot — single-process server
+Serves the frontend static files AND the /ask API from one Python process.
+No nginx required: Railway routes all traffic here.
 """
 
 import http.server
@@ -10,9 +11,8 @@ import os
 import random
 from socketserver import ThreadingMixIn
 
-# ===== CHARGER .env =====
+# ===== CHARGER .env (local dev only — Railway uses dashboard env vars) =====
 def load_env_file(filepath):
-    """Charge les variables du fichier .env"""
     if os.path.exists(filepath):
         with open(filepath, 'r') as f:
             for line in f:
@@ -26,6 +26,7 @@ load_env_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 # ===== CONFIGURATION =====
 API_HOST = '0.0.0.0'
 API_PORT = int(os.getenv('PORT', 8000))
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend')
 
 # ===== BLAGUES =====
 BLAGUES = [
@@ -41,7 +42,7 @@ BLAGUES = [
     "😂 Pourquoi les ghosts ne mentent jamais ? Parce qu'ils sont transparents !"
 ]
 
-# ===== SYSTEM PROMPTS PAR PERSONNALITE =====
+# ===== SYSTEM PROMPTS =====
 SYSTEM_PROMPTS = {
     'France': "Tu es un professeur d'histoire et de géographie passionné par la France. Réponds avec enthousiasme et partage tes connaissances.",
     'Mathématiques': "Tu es un prof de maths patient et bienveillant. Explique les concepts de façon simple et amusante.",
@@ -52,11 +53,17 @@ SYSTEM_PROMPTS = {
 }
 
 
-class ChatHandler(http.server.BaseHTTPRequestHandler):
-    """Gestionnaire HTTP pour l'API TOKYO"""
+class TokyoHandler(http.server.SimpleHTTPRequestHandler):
+    """
+    Serves static files from frontend/ for all GET requests,
+    and handles POST /ask for the Claude API.
+    SimpleHTTPRequestHandler provides correct MIME types, 304 caching, etc.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=STATIC_DIR, **kwargs)
 
     def do_POST(self):
-        """Traite les requêtes POST"""
         if self.path == '/ask':
             try:
                 content_length = int(self.headers.get('Content-Length', 0))
@@ -79,37 +86,29 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
                 self.send_error(500, f'Server error: {str(e)}')
                 return
 
-            # Headers only written after all data is ready — avoids send_error after commit
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            response_json = json.dumps({
+            self.wfile.write(json.dumps({
                 'response': response_text,
                 'joke': joke
-            })
-            self.wfile.write(response_json.encode('utf-8'))
+            }).encode('utf-8'))
         else:
             self.send_error(404, 'Not found')
 
     def do_GET(self):
-        """Traite les requêtes GET"""
-        if self.path in ('/', '/health'):
+        if self.path == '/health':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            response = json.dumps({
-                'status': 'ok',
-                'service': 'TOKYO Chatbot API',
-                'version': '1.0.0'
-            })
-            self.wfile.write(response.encode('utf-8'))
+            self.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8'))
         else:
-            self.send_error(404, 'Not found')
+            # Delegate all other GETs to SimpleHTTPRequestHandler (serves frontend/)
+            super().do_GET()
 
     def do_OPTIONS(self):
-        """Traite les requêtes CORS preflight"""
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
@@ -117,59 +116,49 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
     def log_message(self, format, *args):
-        """Supprime les logs par défaut"""
         pass
 
 
 def get_response(question, personnalite='France'):
-    """Obtient une réponse de Claude via l'API HTTP"""
     import urllib.request
     import urllib.error
 
     api_key = os.getenv('ANTHROPIC_API_KEY')
     if not api_key:
-        return f"❌ Clé API non configurée"
+        return '❌ Clé API non configurée'
 
     system_prompt = SYSTEM_PROMPTS.get(personnalite, SYSTEM_PROMPTS['France'])
 
     try:
-        # Appel HTTP à l'API Claude
-        url = "https://api.anthropic.com/v1/messages"
+        url = 'https://api.anthropic.com/v1/messages'
         headers = {
             'Content-Type': 'application/json',
             'x-api-key': api_key,
             'anthropic-version': '2023-06-01'
         }
-
         data = json.dumps({
-            "model": "claude-haiku-4-5-20251001",
-            "max_tokens": 1024,
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": question}]
+            'model': 'claude-haiku-4-5-20251001',
+            'max_tokens': 1024,
+            'system': system_prompt,
+            'messages': [{'role': 'user', 'content': question}]
         }).encode('utf-8')
 
         req = urllib.request.Request(url, data=data, headers=headers)
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=15) as response:
             result = json.loads(response.read().decode('utf-8'))
             return result['content'][0]['text']
 
     except urllib.error.HTTPError as e:
-        error_msg = e.read().decode('utf-8')
-        return f"❌ Erreur API: {error_msg[:200]}"
+        return f"❌ Erreur API: {e.read().decode('utf-8')[:200]}"
     except Exception as e:
         return f"❌ Erreur: {type(e).__name__}: {str(e)[:100]}"
 
 
 class ThreadedHTTPServer(ThreadingMixIn, http.server.HTTPServer):
-    """Each request runs in its own thread — prevents one slow Claude call from blocking others."""
     daemon_threads = True
 
 
 if __name__ == '__main__':
-    server = ThreadedHTTPServer((API_HOST, API_PORT), ChatHandler)
-    print(f'✅ Serveur TOKYO API démarré sur http://{API_HOST}:{API_PORT}')
-    print('📡 Endpoints:')
-    print('   POST /ask - Poser une question')
-    print('   GET /health - Vérifier la santé du serveur')
-    print('   OPTIONS /* - Support CORS')
+    server = ThreadedHTTPServer((API_HOST, API_PORT), TokyoHandler)
+    print(f'✅ TOKYO démarré sur http://{API_HOST}:{API_PORT}')
     server.serve_forever()
