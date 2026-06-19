@@ -183,6 +183,7 @@
   <header>
     <img src="assets/saros.jpg" alt="TOKYO Logo" />
     <h1>TOKYO</h1>
+    <button id="btn-music" onclick="toggleMusic()" class="btn-langue" style="margin-left:auto">🔇 Musique</button>
   </header>
 
   <!-- MAIN -->
@@ -304,7 +305,7 @@
       let enemies = [], score = 0, speed = 3, frame = 0;
       let best = parseInt(localStorage.getItem('mario_best') || '0');
 
-      function jump() { if (mario.onGround && marioRunning) { mario.vy = -13; mario.onGround = false; } }
+      function jump() { if (mario.onGround && marioRunning) { mario.vy = -13; mario.onGround = false; sfxJump(); } }
       canvas.onclick = jump;
       function kd(e) { if (e.code === 'Space') { e.preventDefault(); jump(); } if (!marioRunning) document.removeEventListener('keydown', kd); }
       document.addEventListener('keydown', kd);
@@ -369,7 +370,7 @@
         }
 
         // Score
-        if (frame % 6 === 0) { score++; speed = 3 + score / 80; }
+        if (frame % 6 === 0) { score++; speed = 3 + score / 80; if (score%20===0) sfxCoin(); }
         const sc = document.getElementById('mario-score'); if (sc) sc.textContent = score;
         ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Arial'; ctx.fillText('🍄 ' + score, 10, 20);
       }
@@ -465,6 +466,7 @@
         // Spawn barrels
         if (bframe % 100 === 0 && !won) {
           barrels.push({ x: 188, y: 50, vx: 1.8 + score * 0.01, vy: 0 });
+          sfxBarrel();
         }
 
         // Barrels
@@ -516,7 +518,7 @@
 
         // Win check — reach top platform
         if (!won && player.y < 60 && player.x > 200 && player.x < 330) {
-          won = true; dkRunning = false;
+          won = true; dkRunning = false; sfxWin();
           ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W,H);
           ctx.fillStyle='#FFD700'; ctx.font='bold 24px Arial'; ctx.textAlign='center';
           ctx.fillText('🏆 Tu as sauvé la princesse !', W/2, H/2);
@@ -725,7 +727,7 @@
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
 
-      function flap() { if (pilotRunning) pilotVY = -5; }
+      function flap() { if (pilotRunning) { pilotVY = -5; sfxFlap(); } }
       canvas.onclick = flap;
       document.addEventListener('keydown', function kd(e) {
         if (e.code === 'Space') { e.preventDefault(); flap(); }
@@ -945,13 +947,13 @@
           if (canMove(mx, my)) { pac.x = mx; pac.y = my; }
 
           // Eat dot
-          if (map[pac.y][pac.x] === 0) { map[pac.y][pac.x]=2; score+=10; dotsEaten++; const s=document.getElementById('pm-score'); if(s) s.textContent=score; }
-          if (map[pac.y][pac.x] === 3) { map[pac.y][pac.x]=2; score+=50; dotsEaten++; powered=60; const s=document.getElementById('pm-score'); if(s) s.textContent=score; }
+          if (map[pac.y][pac.x] === 0) { map[pac.y][pac.x]=2; score+=10; dotsEaten++; sfxEat(); const s=document.getElementById('pm-score'); if(s) s.textContent=score; }
+          if (map[pac.y][pac.x] === 3) { map[pac.y][pac.x]=2; score+=50; dotsEaten++; powered=60; sfxPower(); const s=document.getElementById('pm-score'); if(s) s.textContent=score; }
           if (powered>0) powered--;
 
           // Win
           if (dotsEaten >= totalDots) {
-            pmRunning = false;
+            pmRunning = false; sfxWin();
             ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,PM_COLS*PM_CELL,PM_ROWS*PM_CELL);
             ctx.fillStyle='#FFD700'; ctx.font='bold 22px Arial'; ctx.textAlign='center';
             ctx.fillText('🏆 GAGNÉ !', PM_COLS*PM_CELL/2, PM_ROWS*PM_CELL/2);
@@ -1026,7 +1028,7 @@
               pac.x=10; pac.y=16; pac.dx=0; pac.dy=0;
               ghosts=[{x:9,y:9,dx:1,dy:0,color:GHOST_COLORS[0]},{x:11,y:9,dx:-1,dy:0,color:GHOST_COLORS[1]},{x:9,y:11,dx:0,dy:1,color:GHOST_COLORS[2]},{x:11,y:11,dx:0,dy:-1,color:GHOST_COLORS[3]}];
               if (lives<=0) {
-                pmRunning=false;
+                pmRunning=false; sfxGameOver();
                 ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,PM_COLS*PM_CELL,PM_ROWS*PM_CELL);
                 ctx.fillStyle='#FFD700'; ctx.font='bold 22px Arial'; ctx.textAlign='center';
                 ctx.fillText('💀 GAME OVER', PM_COLS*PM_CELL/2, PM_ROWS*PM_CELL/2);
@@ -1043,6 +1045,100 @@
       pmRunning = false;
       cancelAnimationFrame(pmRAF);
     }
+
+    // ===== AUDIO ENGINE =====
+    let AC = null, musicOn = false, musicTimer = null;
+
+    function getAC() {
+      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      return AC;
+    }
+
+    // Play a single note: freq Hz, duration s, volume 0-1, wave type
+    function playNote(freq, dur, vol, type) {
+      const ac = getAC();
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = type || 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime + dur);
+    }
+
+    // Schedule a sequence of notes starting at `when` (AC time)
+    function scheduleNotes(notes, when, vol, type) {
+      const ac = getAC();
+      notes.forEach(([freq, dur]) => {
+        if (freq > 0) {
+          const osc = ac.createOscillator();
+          const gain = ac.createGain();
+          osc.connect(gain); gain.connect(ac.destination);
+          osc.type = type || 'square';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(vol, when);
+          gain.gain.exponentialRampToValueAtTime(0.001, when + dur * 0.9);
+          osc.start(when);
+          osc.stop(when + dur);
+        }
+        when += dur;
+      });
+      return when;
+    }
+
+    // ---- Chiptune melody (Pac-Man inspired arcade loop) ----
+    // Notes: [frequency, duration_seconds]
+    const NOTE = { C4:261.6, D4:293.7, E4:329.6, F4:349.2, G4:392, A4:440, B4:493.9,
+                   C5:523.3, D5:587.3, E5:659.3, F5:698.5, G5:784, A5:880, B5:987.8,
+                   Bb4:466.2, Bb5:932.3, Eb5:622.3, _ :0 };
+    const T = 0.12; // base beat
+    const MELODY_LOOP = [
+      [NOTE.E5,T],[NOTE.E5,T],[NOTE._,T],[NOTE.E5,T],[NOTE._,T],[NOTE.C5,T],[NOTE.E5,T*2],
+      [NOTE.G5,T*2],[NOTE._,T*2],[NOTE.G4,T*2],[NOTE._,T*2],
+      [NOTE.C5,T],[NOTE._,T],[NOTE.G4,T],[NOTE._,T],[NOTE.E4,T],[NOTE._,T],
+      [NOTE.A4,T*2],[NOTE.B4,T*2],[NOTE.Bb4,T],[NOTE.A4,T*2],
+      [NOTE.G4,T],[NOTE.E5,T],[NOTE.G5,T*1.5],[NOTE.A5,T],[NOTE.F5,T],[NOTE.G5,T],
+      [NOTE._,T],[NOTE.E5,T*2],[NOTE.C5,T],[NOTE.D5,T],[NOTE.B4,T*2],[NOTE._,T*2],
+    ];
+    const BASS_LOOP = [
+      [NOTE.C4,T*4],[NOTE.G4,T*4],[NOTE.E4,T*4],[NOTE.A4,T*4],
+      [NOTE.F4,T*4],[NOTE.G4,T*4],[NOTE.E4,T*4],[NOTE.D4,T*4],
+    ];
+
+    function playMusicLoop() {
+      if (!musicOn) return;
+      const ac = getAC();
+      const start = ac.currentTime + 0.05;
+      const end1 = scheduleNotes(MELODY_LOOP, start, 0.12, 'square');
+      scheduleNotes(BASS_LOOP, start, 0.07, 'triangle');
+      const loopDur = (end1 - start) * 1000;
+      musicTimer = setTimeout(playMusicLoop, loopDur - 80);
+    }
+
+    function toggleMusic() {
+      musicOn = !musicOn;
+      const btn = document.getElementById('btn-music');
+      if (musicOn) {
+        if (btn) btn.textContent = '🔊 Musique';
+        playMusicLoop();
+      } else {
+        if (btn) btn.textContent = '🔇 Musique';
+        clearTimeout(musicTimer);
+      }
+    }
+
+    // ---- Sound effects ----
+    function sfxJump()    { playNote(520, 0.08, 0.15, 'square'); setTimeout(()=>playNote(660,0.1,0.12,'square'),80); }
+    function sfxEat()     { playNote(440, 0.05, 0.1, 'square'); setTimeout(()=>playNote(550,0.05,0.1,'square'),55); }
+    function sfxPower()   { [220,280,360,440].forEach((f,i)=>setTimeout(()=>playNote(f,0.1,0.15,'sawtooth'),i*80)); }
+    function sfxWin()     { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playNote(f,0.18,0.18,'square'),i*160)); }
+    function sfxGameOver(){ [440,392,349,294,261].forEach((f,i)=>setTimeout(()=>playNote(f,0.22,0.18,'sawtooth'),i*140)); }
+    function sfxBarrel()  { playNote(180, 0.12, 0.15, 'triangle'); }
+    function sfxFlap()    { playNote(600, 0.06, 0.1, 'square'); setTimeout(()=>playNote(400,0.08,0.08,'square'),60); }
+    function sfxCoin()    { playNote(988, 0.06, 0.15, 'square'); setTimeout(()=>playNote(1319,0.1,0.15,'square'),65); }
   </script>
 </body>
 </html>
