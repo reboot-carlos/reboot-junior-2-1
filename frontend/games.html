@@ -199,21 +199,17 @@
         <div class="game-icon">🎲</div>
         <div class="game-name">Lancé de dé</div>
       </div>
-      <div class="game-card" onclick="lancerDevineNombre()">
-        <div class="game-icon">🎯</div>
-        <div class="game-name">Devine le nombre</div>
+      <div class="game-card" onclick="lancerMario()">
+        <div class="game-icon">🍄</div>
+        <div class="game-name">Mario</div>
       </div>
-      <div class="game-card" onclick="lancerCalcul()">
-        <div class="game-icon">🔢</div>
-        <div class="game-name">Calcul Mental</div>
+      <div class="game-card" onclick="lancerDonkeyKong()">
+        <div class="game-icon">🦍</div>
+        <div class="game-name">Donkey Kong</div>
       </div>
       <div class="game-card" onclick="lancerMemory()">
         <div class="game-icon">🧠</div>
         <div class="game-name">Memory</div>
-      </div>
-      <div class="game-card" onclick="lancerQuiz()">
-        <div class="game-icon">❓</div>
-        <div class="game-name">Quiz</div>
       </div>
       <div class="game-card" onclick="lancerBlackjack()">
         <div class="game-icon">🎰</div>
@@ -275,78 +271,270 @@
       document.getElementById('de-msg').textContent = `Tu as obtenu ${val + 1} !`;
     }
 
-    // ===== 2. DEVINE LE NOMBRE =====
-    let devineSecret, devineEssais;
-    function lancerDevineNombre() {
-      devineSecret = Math.floor(Math.random() * 100) + 1;
-      devineEssais = 0;
+    // ===== 2. MARIO =====
+    let marioRAF, marioRunning;
+    function lancerMario() {
       ouvrirJeu(`
-        <h3>🎯 Devine le nombre</h3>
-        <p>Je pense à un nombre entre <strong>1 et 100</strong></p>
-        <input id="devine-input" type="number" min="1" max="100"
-          style="padding:0.5rem;font-size:1rem;border-radius:6px;border:2px solid var(--primary);background:#1a1a25;color:#fff;width:100px;text-align:center"
-          onkeypress="if(event.key==='Enter')devinerNombre()" />
-        <br><br>
-        <button class="jeu-btn jeu-btn-gold" onclick="devinerNombre()">Valider</button>
-        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Abandonner</button>
-        <p id="devine-msg" style="margin-top:1rem;font-size:1.1rem"></p>
+        <h3>🍄 Mario Run</h3>
+        <p>Espace / Clic pour sauter — évite les Goombas !</p>
+        <canvas id="mario-canvas" width="480" height="200"
+          style="border:2px solid var(--primary);border-radius:8px;display:block;margin:0.8rem auto;background:#5c94fc;max-width:100%;cursor:pointer"></canvas>
+        <p>Score : <strong id="mario-score">0</strong> &nbsp; Meilleur : <strong id="mario-best">0</strong></p>
+        <button class="jeu-btn jeu-btn-gold" id="mario-start" onclick="startMario()">▶ Démarrer</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="stopMario();fermerJeu()">Fermer</button>
       `);
-      setTimeout(() => document.getElementById('devine-input').focus(), 100);
     }
-    function devinerNombre() {
-      const val = parseInt(document.getElementById('devine-input').value);
-      if (!val || val < 1 || val > 100) return;
-      devineEssais++;
-      const msg = document.getElementById('devine-msg');
-      if (val === devineSecret) {
-        msg.innerHTML = `🏆 Bravo ! C'était <strong>${devineSecret}</strong> en ${devineEssais} essai(s) !`;
-      } else if (val < devineSecret) {
-        msg.textContent = `📈 Plus grand ! (essai ${devineEssais})`;
-      } else {
-        msg.textContent = `📉 Plus petit ! (essai ${devineEssais})`;
-      }
-      document.getElementById('devine-input').value = '';
-      document.getElementById('devine-input').focus();
-    }
+    function startMario() {
+      stopMario();
+      const btn = document.getElementById('mario-start');
+      if (btn) btn.textContent = '🔄 Rejouer';
+      marioRunning = true;
 
-    // ===== 3. CALCUL MENTAL =====
-    let calcScore, calcTotal, calcA, calcB, calcOp;
-    function lancerCalcul() {
-      calcScore = 0; calcTotal = 0;
+      const canvas = document.getElementById('mario-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const GROUND = H - 30;
+
+      let mario = { x: 60, y: GROUND - 32, w: 28, h: 32, vy: 0, onGround: true };
+      let enemies = [], score = 0, speed = 3, frame = 0;
+      let best = parseInt(localStorage.getItem('mario_best') || '0');
+
+      function jump() { if (mario.onGround && marioRunning) { mario.vy = -13; mario.onGround = false; } }
+      canvas.onclick = jump;
+      function kd(e) { if (e.code === 'Space') { e.preventDefault(); jump(); } if (!marioRunning) document.removeEventListener('keydown', kd); }
+      document.addEventListener('keydown', kd);
+
+      function loop() {
+        if (!marioRunning) return;
+        marioRAF = requestAnimationFrame(loop);
+        frame++;
+
+        // Sky
+        ctx.fillStyle = '#5c94fc'; ctx.fillRect(0, 0, W, H);
+        // Clouds
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(80 - (frame*0.3 % W), 30, 60, 20);
+        ctx.fillRect(280 - (frame*0.2 % W), 50, 80, 18);
+        // Ground
+        ctx.fillStyle = '#8B4513'; ctx.fillRect(0, GROUND, W, H - GROUND);
+        ctx.fillStyle = '#228B22'; ctx.fillRect(0, GROUND - 4, W, 8);
+
+        // Spawn enemy
+        if (frame % Math.max(60, 120 - score) === 0) {
+          enemies.push({ x: W + 10, y: GROUND - 28, w: 28, h: 28 });
+        }
+
+        // Enemies
+        enemies.forEach(e => {
+          e.x -= speed;
+          // Goomba body
+          ctx.fillStyle = '#8B4513'; ctx.fillRect(e.x, e.y + 8, e.w, e.h - 8);
+          ctx.fillStyle = '#D2691E'; ctx.fillRect(e.x + 4, e.y, e.w - 8, 14);
+          // Eyes
+          ctx.fillStyle = '#fff'; ctx.fillRect(e.x + 5, e.y + 3, 7, 6); ctx.fillRect(e.x + 16, e.y + 3, 7, 6);
+          ctx.fillStyle = '#000'; ctx.fillRect(e.x + 7, e.y + 4, 4, 4); ctx.fillRect(e.x + 18, e.y + 4, 4, 4);
+        });
+        enemies = enemies.filter(e => e.x > -40);
+
+        // Mario physics
+        mario.vy += 0.7;
+        mario.y += mario.vy;
+        if (mario.y >= GROUND - mario.h) { mario.y = GROUND - mario.h; mario.vy = 0; mario.onGround = true; }
+
+        // Draw Mario
+        ctx.fillStyle = '#FF0000'; ctx.fillRect(mario.x, mario.y, mario.w, mario.h * 0.45); // hat
+        ctx.fillStyle = '#FFCC99'; ctx.fillRect(mario.x + 4, mario.y + mario.h * 0.45 - 2, mario.w - 8, mario.h * 0.3); // face
+        ctx.fillStyle = '#0000CC'; ctx.fillRect(mario.x, mario.y + mario.h * 0.6, mario.w, mario.h * 0.4); // body
+        ctx.fillStyle = '#FF0000'; ctx.fillRect(mario.x - 4, mario.y + mario.h * 0.75, 10, mario.h * 0.25); // left arm
+        ctx.fillRect(mario.x + mario.w - 6, mario.y + mario.h * 0.75, 10, mario.h * 0.25); // right arm
+
+        // Collision
+        for (const e of enemies) {
+          if (mario.x + mario.w - 4 > e.x + 4 && mario.x + 4 < e.x + e.w - 4 && mario.y + mario.h > e.y + 4 && mario.y < e.y + e.h) {
+            marioRunning = false;
+            if (score > best) { best = score; localStorage.setItem('mario_best', best); }
+            ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#FFD700'; ctx.font = 'bold 26px Arial'; ctx.textAlign = 'center';
+            ctx.fillText('💀 GAME OVER', W/2, H/2 - 10);
+            ctx.font = '17px Arial'; ctx.fillText('Score : ' + score + '  |  Meilleur : ' + best, W/2, H/2 + 20);
+            ctx.textAlign = 'left';
+            const sc = document.getElementById('mario-best'); if (sc) sc.textContent = best;
+            return;
+          }
+        }
+
+        // Score
+        if (frame % 6 === 0) { score++; speed = 3 + score / 80; }
+        const sc = document.getElementById('mario-score'); if (sc) sc.textContent = score;
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Arial'; ctx.fillText('🍄 ' + score, 10, 20);
+      }
+      marioRAF = requestAnimationFrame(loop);
+    }
+    function stopMario() { marioRunning = false; cancelAnimationFrame(marioRAF); }
+
+    // ===== 3. DONKEY KONG =====
+    let dkRAF, dkRunning, dkKeys;
+    function lancerDonkeyKong() {
       ouvrirJeu(`
-        <h3>🔢 Calcul Mental</h3>
-        <div id="calc-question" style="font-size:1.8rem;color:var(--gold-light);margin:0.8rem 0"></div>
-        <input id="calc-input" type="number"
-          style="padding:0.5rem;font-size:1rem;border-radius:6px;border:2px solid var(--primary);background:#1a1a25;color:#fff;width:100px;text-align:center"
-          onkeypress="if(event.key==='Enter')validerCalcul()" />
-        <br><br>
-        <button class="jeu-btn jeu-btn-gold" onclick="validerCalcul()">Valider</button>
-        <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Quitter</button>
-        <p id="calc-msg" style="margin-top:0.8rem"></p>
-        <p id="calc-score" style="color:var(--gold-light)">Score : 0 / 0</p>
+        <h3>🦍 Donkey Kong</h3>
+        <p>← → pour bouger, Espace pour sauter — monte sauver la princesse !</p>
+        <canvas id="dk-canvas" width="480" height="280"
+          style="border:2px solid var(--primary);border-radius:8px;display:block;margin:0.8rem auto;background:#000;max-width:100%;cursor:pointer"></canvas>
+        <p>Vies : <strong id="dk-lives">3</strong> &nbsp; Score : <strong id="dk-score">0</strong></p>
+        <button class="jeu-btn jeu-btn-gold" id="dk-start" onclick="startDK()">▶ Démarrer</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="stopDK();fermerJeu()">Fermer</button>
       `);
-      prochainCalcul();
     }
-    function prochainCalcul() {
-      const ops = ['+', '-', '×'];
-      calcOp = ops[Math.floor(Math.random() * 3)];
-      calcA = Math.floor(Math.random() * 20) + 1;
-      calcB = Math.floor(Math.random() * (calcOp === '×' ? 10 : 20)) + 1;
-      if (calcOp === '-' && calcB > calcA) [calcA, calcB] = [calcB, calcA];
-      document.getElementById('calc-question').textContent = `${calcA} ${calcOp} ${calcB} = ?`;
-      document.getElementById('calc-input').value = '';
-      setTimeout(() => document.getElementById('calc-input').focus(), 50);
+    function startDK() {
+      stopDK();
+      const btn = document.getElementById('dk-start');
+      if (btn) btn.textContent = '🔄 Rejouer';
+      dkRunning = true; dkKeys = {};
+
+      const canvas = document.getElementById('dk-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = 480, H = 280;
+
+      // Platforms: [{x, y, w}]
+      const PLATFORMS = [
+        { x: 0,   y: 250, w: W },        // ground
+        { x: 20,  y: 195, w: 380 },
+        { x: 60,  y: 140, w: 380 },
+        { x: 20,  y: 85,  w: 380 },
+        { x: 160, y: 38,  w: 120 },       // top (princess + DK)
+      ];
+      // Ladders: [{x, y, h}]
+      const LADDERS = [
+        { x: 360, y: 195, h: 55 },
+        { x: 80,  y: 140, h: 55 },
+        { x: 340, y: 85,  h: 55 },
+        { x: 200, y: 38,  h: 47 },
+      ];
+
+      let player = { x: 40, y: 210, w: 16, h: 22, vx: 0, vy: 0, onGround: false, onLadder: false };
+      let barrels = [], lives = 3, score = 0, won = false;
+      let bframe = 0;
+
+      function onPlatform(p, vy) {
+        for (const pl of PLATFORMS) {
+          if (p.x + p.w > pl.x && p.x < pl.x + pl.w && p.y + p.h <= pl.y + 4 && p.y + p.h + vy >= pl.y - 2) return pl.y;
+        }
+        return null;
+      }
+      function onLadderCheck() {
+        for (const l of LADDERS) {
+          if (player.x + player.w/2 > l.x && player.x + player.w/2 < l.x + 14 && player.y + player.h > l.y && player.y < l.y + l.h) return true;
+        }
+        return false;
+      }
+
+      function kd(e) { dkKeys[e.code] = true; if (['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault(); }
+      function ku(e) { dkKeys[e.code] = false; }
+      document.addEventListener('keydown', kd);
+      document.addEventListener('keyup', ku);
+
+      // Mobile: tap canvas = jump
+      canvas.onclick = () => { if (player.onGround) player.vy = -9; };
+
+      function loop() {
+        if (!dkRunning) return;
+        dkRAF = requestAnimationFrame(loop);
+        bframe++;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+
+        // Draw platforms
+        PLATFORMS.forEach(pl => {
+          ctx.fillStyle = '#e55'; ctx.fillRect(pl.x, pl.y, pl.w, 8);
+        });
+        // Draw ladders
+        LADDERS.forEach(l => {
+          ctx.fillStyle = '#aa8'; ctx.fillRect(l.x, l.y, 3, l.h); ctx.fillRect(l.x + 11, l.y, 3, l.h);
+          for (let y = l.y; y < l.y + l.h; y += 10) { ctx.fillRect(l.x, y, 14, 2); }
+        });
+
+        // DK + princess
+        ctx.font = '22px serif'; ctx.fillText('🦍', 170, 34);
+        ctx.font = '18px serif'; ctx.fillText('👸', 260, 34);
+
+        // Spawn barrels
+        if (bframe % 100 === 0 && !won) {
+          barrels.push({ x: 188, y: 50, vx: 1.8 + score * 0.01, vy: 0 });
+        }
+
+        // Barrels
+        barrels.forEach(b => {
+          b.vy += 0.4;
+          b.y += b.vy;
+          const land = onPlatform(b, b.vy);
+          if (land !== null) { b.y = land - 16; b.vy = 0; }
+          if (b.x > W - 20) b.vx = -Math.abs(b.vx);
+          if (b.x < 0) b.vx = Math.abs(b.vx);
+          b.x += b.vx;
+          ctx.font = '18px serif'; ctx.fillText('🛢️', b.x - 9, b.y + 14);
+
+          // Collision with player
+          if (!won && Math.abs(b.x - player.x) < 20 && Math.abs(b.y - player.y) < 22) {
+            lives--; barrels = [];
+            const lv = document.getElementById('dk-lives'); if (lv) lv.textContent = lives;
+            player.x = 40; player.y = 210;
+            if (lives <= 0) {
+              dkRunning = false;
+              ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,H);
+              ctx.fillStyle='#FFD700'; ctx.font='bold 26px Arial'; ctx.textAlign='center';
+              ctx.fillText('💀 GAME OVER', W/2, H/2);
+              ctx.font='17px Arial'; ctx.fillText('Score : '+score, W/2, H/2+28);
+              ctx.textAlign='left';
+            }
+          }
+        });
+        barrels = barrels.filter(b => b.y < H + 20);
+
+        // Player movement
+        player.onLadder = onLadderCheck();
+        if (player.onLadder) {
+          if (dkKeys['ArrowUp'])   { player.y -= 2; player.onGround = false; }
+          if (dkKeys['ArrowDown']) { player.y += 2; }
+          player.vy = 0;
+        } else {
+          player.vy += 0.5;
+        }
+        if (dkKeys['ArrowLeft'])  player.x -= 2.5;
+        if (dkKeys['ArrowRight']) player.x += 2.5;
+        if ((dkKeys['Space'] || dkKeys['ArrowUp']) && player.onGround && !player.onLadder) { player.vy = -9; player.onGround = false; }
+        player.y += player.vy;
+        const land = onPlatform(player, player.vy);
+        if (land !== null) { player.y = land - player.h; player.vy = 0; player.onGround = true; }
+        else player.onGround = false;
+        player.x = Math.max(0, Math.min(W - player.w, player.x));
+        if (player.y > H) { player.y = 210; player.x = 40; }
+
+        // Win check — reach top platform
+        if (!won && player.y < 60 && player.x > 200 && player.x < 330) {
+          won = true; dkRunning = false;
+          ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W,H);
+          ctx.fillStyle='#FFD700'; ctx.font='bold 24px Arial'; ctx.textAlign='center';
+          ctx.fillText('🏆 Tu as sauvé la princesse !', W/2, H/2);
+          ctx.font='17px Arial'; ctx.fillText('Score : '+(score+500), W/2, H/2+30);
+          ctx.textAlign='left';
+        }
+
+        // Score
+        if (bframe % 10 === 0 && !won) { score++; const s=document.getElementById('dk-score'); if(s) s.textContent=score; }
+
+        // Draw player (Jumpman)
+        ctx.fillStyle = '#FF0000'; ctx.fillRect(player.x, player.y, player.w, player.h * 0.4);
+        ctx.fillStyle = '#FFCC99'; ctx.fillRect(player.x + 2, player.y + player.h*0.38, player.w-4, player.h*0.28);
+        ctx.fillStyle = '#0055CC'; ctx.fillRect(player.x, player.y + player.h*0.6, player.w, player.h*0.4);
+      }
+      dkRAF = requestAnimationFrame(loop);
     }
-    function validerCalcul() {
-      const rep = parseInt(document.getElementById('calc-input').value);
-      if (isNaN(rep)) return;
-      const correct = calcOp === '+' ? calcA + calcB : calcOp === '-' ? calcA - calcB : calcA * calcB;
-      calcTotal++;
-      const msg = document.getElementById('calc-msg');
-      if (rep === correct) { calcScore++; msg.textContent = '✅ Correct !'; }
-      else { msg.textContent = `❌ C'était ${correct}`; }
-      document.getElementById('calc-score').textContent = `Score : ${calcScore} / ${calcTotal}`;
-      setTimeout(prochainCalcul, 900);
+    function stopDK() {
+      dkRunning = false;
+      cancelAnimationFrame(dkRAF);
+      document.removeEventListener('keydown', e => { dkKeys && (dkKeys[e.code]=true); });
+      document.removeEventListener('keyup',   e => { dkKeys && (dkKeys[e.code]=false); });
     }
 
     // ===== 5. MEMORY =====
@@ -400,54 +588,7 @@
       }
     }
 
-    // ===== 6. QUIZ =====
-    const QUESTIONS = [
-      { q:'Quelle est la capitale de la France ?', r:['Paris','Lyon','Marseille','Bordeaux'], ok:0 },
-      { q:'Combien font 7 × 8 ?',                 r:['54','56','48','64'],                  ok:1 },
-      { q:'Quel est le plus grand océan ?',         r:['Atlantique','Indien','Arctique','Pacifique'], ok:3 },
-      { q:'En quelle année la Tour Eiffel a-t-elle été construite ?', r:['1889','1900','1875','1912'], ok:0 },
-      { q:'Quel est le symbole chimique de l\'eau ?', r:['O2','HO','H2O','CO2'], ok:2 },
-      { q:'Combien y a-t-il de continents ?',       r:['5','6','7','8'],                    ok:2 },
-      { q:'Qui a peint la Joconde ?',               r:['Picasso','Monet','Léonard de Vinci','Raphaël'], ok:2 },
-      { q:'Quelle planète est la plus proche du Soleil ?', r:['Vénus','Mars','Mercure','Terre'], ok:2 },
-    ];
-    let quizIndex, quizScore;
-    function lancerQuiz() {
-      quizIndex = 0; quizScore = 0;
-      const shuffled = [...QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
-      window._quizQuestions = shuffled;
-      afficherQuestion();
-    }
-    function afficherQuestion() {
-      const qs = window._quizQuestions;
-      if (quizIndex >= qs.length) {
-        ouvrirJeu(`
-          <h3>❓ Quiz terminé !</h3>
-          <p style="font-size:2rem">🏆 ${quizScore} / ${qs.length}</p>
-          <p>${quizScore >= 4 ? 'Excellent !' : quizScore >= 2 ? 'Pas mal !' : 'Entraîne-toi encore !'}</p>
-          <button class="jeu-btn jeu-btn-gold" onclick="lancerQuiz()">Rejouer</button>
-          <button class="jeu-btn jeu-btn-gray" onclick="fermerJeu()">Fermer</button>
-        `); return;
-      }
-      const q = qs[quizIndex];
-      const btns = q.r.map((rep, i) =>
-        `<button class="jeu-btn jeu-btn-gray" style="display:block;width:100%;margin:0.3rem 0;" onclick="repondreQuiz(${i})">${rep}</button>`
-      ).join('');
-      ouvrirJeu(`
-        <h3>❓ Quiz</h3>
-        <p style="color:var(--gold-light);font-size:0.8rem">Question ${quizIndex+1} / ${qs.length} — Score : ${quizScore}</p>
-        <p style="font-size:1rem;margin:1rem 0"><strong>${q.q}</strong></p>
-        ${btns}
-      `);
-    }
-    function repondreQuiz(i) {
-      const q = window._quizQuestions[quizIndex];
-      if (i === q.ok) quizScore++;
-      quizIndex++;
-      afficherQuestion();
-    }
-
-    // ===== 7. BLACKJACK =====
+    // ===== 6. BLACKJACK =====
     const CARTES = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
     function valCarte(c) { return ['J','Q','K'].includes(c)?10:c==='A'?11:parseInt(c); }
     function tirerCarte() { return CARTES[Math.floor(Math.random()*13)]; }
