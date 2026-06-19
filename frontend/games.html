@@ -231,6 +231,10 @@
         <div class="game-icon">🃏</div>
         <div class="game-name">Plus ou Moins</div>
       </div>
+      <div class="game-card" onclick="lancerPilot()">
+        <div class="game-icon">✈️</div>
+        <div class="game-name">Pilot</div>
+      </div>
     </div>
   </main>
 
@@ -550,6 +554,102 @@
         if (result === pari) m.textContent = pari === '🟢' ? '🏆 JACKPOT ! ×5 !' : '🏆 Gagné !';
         else m.textContent = '😔 Perdu, retente ta chance !';
       }
+    }
+
+    // ===== 10. PILOT =====
+    let pilotRAF, pilotY, pilotVY, pilotObstacles, pilotScore, pilotRunning;
+    function lancerPilot() {
+      ouvrirJeu(`
+        <h3>✈️ Pilot</h3>
+        <p>Espace / Clic pour monter — évite les obstacles !</p>
+        <canvas id="pilot-canvas" width="480" height="260"
+          style="border:2px solid var(--primary);border-radius:8px;display:block;margin:0.8rem auto;background:#0a0a1a;cursor:pointer;max-width:100%"></canvas>
+        <p>Score : <strong id="pilot-score">0</strong></p>
+        <button class="jeu-btn jeu-btn-gold" id="pilot-start" onclick="startPilot()">▶ Démarrer</button>
+        <button class="jeu-btn jeu-btn-gray" onclick="stopPilot();fermerJeu()">Fermer</button>
+      `);
+    }
+    function startPilot() {
+      stopPilot();
+      const btn = document.getElementById('pilot-start');
+      if (btn) btn.textContent = '🔄 Rejouer';
+      pilotY = 110; pilotVY = 0;
+      pilotObstacles = []; pilotScore = 0; pilotRunning = true;
+
+      const canvas = document.getElementById('pilot-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      function flap() { if (pilotRunning) pilotVY = -5; }
+      canvas.onclick = flap;
+      document.addEventListener('keydown', function kd(e) {
+        if (e.code === 'Space') { e.preventDefault(); flap(); }
+        if (!pilotRunning) document.removeEventListener('keydown', kd);
+      });
+
+      let frame = 0;
+      function loop() {
+        if (!pilotRunning) return;
+        pilotRAF = requestAnimationFrame(loop);
+        ctx.clearRect(0, 0, 480, 260);
+
+        // Background stars
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, 480, 260);
+
+        // Obstacles
+        frame++;
+        if (frame % 90 === 0) {
+          const gap = 90;
+          const top = 30 + Math.random() * (260 - gap - 60);
+          pilotObstacles.push({ x: 490, topH: top, gap });
+        }
+        pilotObstacles.forEach(o => {
+          o.x -= 3;
+          ctx.fillStyle = '#DAA520';
+          ctx.fillRect(o.x, 0, 28, o.topH);
+          ctx.fillRect(o.x, o.topH + o.gap, 28, 260 - o.topH - o.gap);
+        });
+        pilotObstacles = pilotObstacles.filter(o => o.x > -30);
+
+        // Plane physics
+        pilotVY += 0.28;
+        pilotY += pilotVY;
+
+        // Draw plane
+        ctx.font = '26px serif';
+        ctx.fillText('✈️', 60, pilotY + 13);
+
+        // Collision
+        const px = 60, py = pilotY, pw = 28, ph = 20;
+        if (py < 0 || py + ph > 260) { gameOverPilot(ctx); return; }
+        for (const o of pilotObstacles) {
+          if (px + pw > o.x && px < o.x + 28) {
+            if (py < o.topH || py + ph > o.topH + o.gap) { gameOverPilot(ctx); return; }
+            pilotScore++;
+            const sc = document.getElementById('pilot-score');
+            if (sc) sc.textContent = pilotScore;
+          }
+        }
+      }
+      pilotRAF = requestAnimationFrame(loop);
+    }
+    function gameOverPilot(ctx) {
+      pilotRunning = false;
+      cancelAnimationFrame(pilotRAF);
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 0, 480, 260);
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 28px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('💥 GAME OVER', 240, 120);
+      ctx.font = '18px Arial';
+      ctx.fillText('Score : ' + pilotScore, 240, 155);
+      ctx.textAlign = 'left';
+    }
+    function stopPilot() {
+      pilotRunning = false;
+      cancelAnimationFrame(pilotRAF);
     }
 
     // ===== 10. PLUS OU MOINS =====
