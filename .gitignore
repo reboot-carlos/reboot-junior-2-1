@@ -1,0 +1,29 @@
+# Claude Code local config (peut contenir des secrets)
+.claude/
+
+# Secrets — ne jamais committer
+.env
+*.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.vscode/
+*.swp
+
+# Node
+node_modules/
+
+# Logs
+*.log
+/tmp/

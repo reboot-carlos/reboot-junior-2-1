@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TOKYO - Chatbot</title>
+  <link rel="icon" type="image/svg+xml" href="assets/goku-icon.svg" />
+  <style>
+    :root {
+      --primary: #DAA520;
+      --dark:    #15151e;
+      --gray:    #38383f;
+      --white:   #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #15151e 0%, #2a2a3e 100%);
+      color: var(--white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 600px;
+    }
+
+    header {
+      margin-bottom: 3rem;
+    }
+
+    h1 {
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.9; transform: scale(1.05); }
+    }
+
+    .subtitle {
+      font-size: 1.5rem;
+      color: #bbb;
+      margin-bottom: 3rem;
+      line-height: 1.6;
+    }
+
+    .emoji {
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      padding: 2rem;
+      background: rgba(56, 56, 63, 0.3);
+      border-radius: 12px;
+      border: 1px solid #444;
+    }
+
+    .feature {
+      padding: 1rem;
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-title {
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .feature-desc {
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #FFA500);
+      color: #000;
+      box-shadow: 0 4px 15px rgba(218, 165, 32, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(218, 165, 32, 0.6);
+    }
+
+    .btn-primary:active {
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(218, 165, 32, 0.1);
+      transform: translateY(-3px);
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 2.5rem; }
+      .subtitle { font-size: 1.2rem; }
+      .features { grid-template-columns: 1fr; }
+      .btn-group { flex-direction: column; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="emoji">🤖</div>
+      <h1>TOKYO</h1>
+    </header>
+
+    <div class="subtitle">
+      <p>Bienvenue sur TOKYO</p>
+      <p style="font-size: 1rem; margin-top: 1rem; color: #999;">Un vrai chatbot prêt pour de vraies conversations</p>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">💬</div>
+        <div class="feature-title">Conversations</div>
+        <div class="feature-desc">Discutez naturellement</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">😂</div>
+        <div class="feature-title">Blagues</div>
+        <div class="feature-desc">Des rigolades à chaque message</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Rapide</div>
+        <div class="feature-desc">Réponses instantanées</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎨</div>
+        <div class="feature-title">Design</div>
+        <div class="feature-desc">Interface moderne</div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <a href="index.html" class="btn-primary">Commencer à discuter</a>
+      <button class="btn-secondary" onclick="alert('À venir...')">En savoir plus</button>
+    </div>
+
+    <footer>
+      <p>© 2026 TOKYO Chatbot. Tous droits réservés.</p>
+    </footer>
+  </div>
+
+</body>
+</html>

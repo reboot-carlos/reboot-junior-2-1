@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TOKYO - Chatbot IA</title>
+  <link rel="icon" type="image/svg+xml" href="assets/goku-icon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <img src="assets/saros.jpg" alt="TOKYO Logo" />
+    <h1>TOKYO</h1>
+  </header>
+
+  <!-- LANDING PAGE -->
+  <main>
+    <div class="landing">
+      <div class="landing-content">
+        <div class="landing-image">🤖</div>
+        <h2>TOKYO</h2>
+        <p>Un vrai chatbot avec plusieurs personnalités</p>
+        <p class="subtitle">💬 Discute • 😂 Blagues • ⚡ Rapide • 🎨 Design</p>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="demarrerChat()">💬 Commencer le chat</button>
+          <button class="btn-secondary" onclick="alert('📸 Création de photo - Fonctionnalité à venir!')">📸 Création de photo</button>
+          <button class="btn-secondary" onclick="alert('🎬 Création de vidéo - Fonctionnalité à venir!')">🎬 Création de vidéo</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL QUESTION DE DÉMARRAGE -->
+  <div id="modal-question" class="modal">
+    <div class="modal-content">
+      <img src="assets/saros.jpg" alt="Logo" />
+      <h3>❓ Question de démarrage</h3>
+      <p>Quel est le nom du jeu en fond d'écran ?</p>
+      <input id="reponse-question" type="text" placeholder="Écris ta réponse..." />
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-primary" onclick="verifierReponse()">Valider</button>
+        <button class="modal-btn modal-btn-secondary" onclick="sauterQuestion()">Saute la question</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function demarrerChat() {
+      document.getElementById('modal-question').classList.add('active');
+      document.getElementById('reponse-question').focus();
+    }
+
+    function verifierReponse() {
+      const reponse = document.getElementById('reponse-question').value.trim().toLowerCase();
+      if (reponse === 'saros' || reponse === '') {
+        window.location.href = 'chat.html';
+      } else {
+        alert('🤬 T\'ES SÉRIEUX?! C\'EST JUSTE ÉCRIT SUR L\'ÉCRAN! SAROS! SAROS! SAROS! Réessaie avant que je ne perde patience... 😤');
+        document.getElementById('reponse-question').value = '';
+        document.getElementById('reponse-question').focus();
+      }
+    }
+
+    function sauterQuestion() {
+      window.location.href = 'chat.html';
+    }
+
+    // Appui sur Entrée
+    document.getElementById('reponse-question').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') verifierReponse();
+    });
+  </script>
+</body>
+</html>
