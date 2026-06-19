@@ -295,6 +295,11 @@ function chargerHistoriqueChat() {
   });
 }
 
+function supprimerHistorique() {
+  localStorage.removeItem('chatHistory');
+  chargerHistoriqueChat();
+}
+
 function afficherConversation(chat) {
   messagesActuels = [...chat.messages];
   personnaliteActive = chat.personnalite;
