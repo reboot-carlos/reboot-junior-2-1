@@ -83,12 +83,13 @@ class TokyoHandler(http.server.SimpleHTTPRequestHandler):
 
                 question = data.get('question', '').strip()
                 personnalite = data.get('personnalite', 'France')
+                langue = data.get('langue', 'fr')
 
                 if not question:
                     self.send_error(400, 'Question cannot be empty')
                     return
 
-                response_text = get_response(question, personnalite)
+                response_text = get_response(question, personnalite, langue)
                 joke = random.choice(BLAGUES)
             except Exception as e:
                 self.send_error(500, f'Server error: {str(e)}')
@@ -127,7 +128,17 @@ class TokyoHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
-def get_response(question, personnalite='France'):
+LANGUE_INSTRUCTIONS = {
+    'fr': 'Réponds toujours en français.',
+    'en': 'Always respond in English.',
+    'es': 'Responde siempre en español.',
+    'de': 'Antworte immer auf Deutsch.',
+    'it': 'Rispondi sempre in italiano.',
+    'pt': 'Responde sempre em português.',
+    'ja': '常に日本語で答えてください。',
+}
+
+def get_response(question, personnalite='France', langue='fr'):
     import urllib.request
     import urllib.error
 
@@ -135,7 +146,9 @@ def get_response(question, personnalite='France'):
     if not api_key:
         return '❌ Clé API non configurée'
 
-    system_prompt = SYSTEM_PROMPTS.get(personnalite, SYSTEM_PROMPTS['France'])
+    base_prompt = SYSTEM_PROMPTS.get(personnalite, SYSTEM_PROMPTS['France'])
+    lang_instruction = LANGUE_INSTRUCTIONS.get(langue, LANGUE_INSTRUCTIONS['fr'])
+    system_prompt = f"{base_prompt}\n\n{lang_instruction}"
 
     try:
         url = 'https://api.anthropic.com/v1/messages'

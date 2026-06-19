@@ -27,7 +27,7 @@ const PERSONNALITES = {
 const LANGUES = {
   fr: {
     placeholder: 'Écris ton message ici...',
-    envoyer: '✈️ Envoyer',
+    envoyer: 'Envoyer',
     nouveauChat: '🔄 Nouveau Chat',
     retour: '← Retour Accueil',
     personnalites: '🤖 Personnalités',
@@ -38,7 +38,7 @@ const LANGUES = {
   },
   en: {
     placeholder: 'Type your message here...',
-    envoyer: '✈️ Send',
+    envoyer: 'Send',
     nouveauChat: '🔄 New Chat',
     retour: '← Back Home',
     personnalites: '🤖 Personalities',
@@ -46,8 +46,65 @@ const LANGUES = {
     salut: (label) => `Hey! I'm your ${label} 👨‍🏫<br>How can I help you?`,
     erreur: '❌ Server error. Make sure the API is running.',
     btnLangue: '🇬🇧 EN'
+  },
+  es: {
+    placeholder: 'Escribe tu mensaje aquí...',
+    envoyer: 'Enviar',
+    nouveauChat: '🔄 Nuevo Chat',
+    retour: '← Inicio',
+    personnalites: '🤖 Personalidades',
+    historique: '📜 Historial',
+    salut: (label) => `¡Hola! Soy tu ${label} 👨‍🏫<br>¿En qué puedo ayudarte?`,
+    erreur: '❌ Error del servidor. Verifica que la API esté activa.',
+    btnLangue: '🇪🇸 ES'
+  },
+  de: {
+    placeholder: 'Schreib deine Nachricht hier...',
+    envoyer: 'Senden',
+    nouveauChat: '🔄 Neuer Chat',
+    retour: '← Startseite',
+    personnalites: '🤖 Persönlichkeiten',
+    historique: '📜 Verlauf',
+    salut: (label) => `Hallo! Ich bin dein ${label} 👨‍🏫<br>Wie kann ich dir helfen?`,
+    erreur: '❌ Serverfehler. Überprüfe ob die API läuft.',
+    btnLangue: '🇩🇪 DE'
+  },
+  it: {
+    placeholder: 'Scrivi il tuo messaggio qui...',
+    envoyer: 'Invia',
+    nouveauChat: '🔄 Nuova Chat',
+    retour: '← Home',
+    personnalites: '🤖 Personalità',
+    historique: '📜 Cronologia',
+    salut: (label) => `Ciao! Sono il tuo ${label} 👨‍🏫<br>Come posso aiutarti?`,
+    erreur: "❌ Errore del server. Verifica che l'API sia attiva.",
+    btnLangue: '🇮🇹 IT'
+  },
+  pt: {
+    placeholder: 'Escreve a tua mensagem aqui...',
+    envoyer: 'Enviar',
+    nouveauChat: '🔄 Novo Chat',
+    retour: '← Início',
+    personnalites: '🤖 Personalidades',
+    historique: '📜 Histórico',
+    salut: (label) => `Olá! Sou o teu ${label} 👨‍🏫<br>Como posso ajudar-te?`,
+    erreur: '❌ Erro do servidor. Verifica se a API está ativa.',
+    btnLangue: '🇵🇹 PT'
+  },
+  ja: {
+    placeholder: 'メッセージを入力してください...',
+    envoyer: '送信',
+    nouveauChat: '🔄 新しいチャット',
+    retour: '← ホームへ',
+    personnalites: '🤖 キャラクター',
+    historique: '📜 履歴',
+    salut: (label) => `こんにちは！あなたの${label}です 👨‍🏫<br>何でも聞いてください！`,
+    erreur: '❌ サーバーエラー。APIが起動しているか確認してください。',
+    btnLangue: '🇯🇵 JA'
   }
 };
+
+const LANGUES_ORDER = ['fr', 'en', 'es', 'de', 'it', 'pt', 'ja'];
 
 // ===== VARIABLES D'ETAT =====
 let personnaliteActive = localStorage.getItem('personnaliteActive') || 'France';
@@ -81,19 +138,20 @@ function initApp() {
 
 // ===== LANGUE =====
 function toggleLangue() {
-  langueActive = langueActive === 'fr' ? 'en' : 'fr';
+  const idx = LANGUES_ORDER.indexOf(langueActive);
+  langueActive = LANGUES_ORDER[(idx + 1) % LANGUES_ORDER.length];
   localStorage.setItem('langueActive', langueActive);
   appliquerLangue();
 }
 
 function appliquerLangue() {
-  const t = LANGUES[langueActive];
+  const t = LANGUES[langueActive] || LANGUES.fr;
 
   const btnLangue = document.getElementById('btn-langue');
   if (btnLangue) btnLangue.textContent = t.btnLangue;
 
   const envoyerText = document.getElementById('envoyer-text');
-  if (envoyerText) envoyerText.textContent = langueActive === 'fr' ? 'Envoyer' : 'Send';
+  if (envoyerText) envoyerText.textContent = t.envoyer;
 
   if (champTexte) champTexte.placeholder = t.placeholder;
 
@@ -225,7 +283,7 @@ async function envoyerMessage() {
     const response = await fetch(`${apiUrl}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: texte, personnalite: personnaliteActive })
+      body: JSON.stringify({ question: texte, personnalite: personnaliteActive, langue: langueActive })
     });
 
     if (!response.ok) throw new Error('Erreur API');
