@@ -19,19 +19,43 @@ const PERSONNALITES = {
   'Physique': { icon: '⚛️', label: 'Prof de Physique' },
   'Amis': { icon: '👥', label: 'Amis' },
   'Mangas': { icon: '📚', label: 'Expert en Mangas' },
-  'Animes': { icon: '🎬', label: 'Expert en Animes' }
+  'Animes': { icon: '🎬', label: 'Expert en Animes' },
+  'Révision': { icon: '📝', label: 'Fiche de Révision' }
+};
+
+// ===== TRADUCTIONS =====
+const LANGUES = {
+  fr: {
+    placeholder: 'Écris ton message ici...',
+    envoyer: '✈️ Envoyer',
+    nouveauChat: '🔄 Nouveau Chat',
+    retour: '← Retour Accueil',
+    personnalites: '🤖 Personnalités',
+    historique: '📜 Historique',
+    salut: (label) => `Salut ! Je suis ton ${label} 👨‍🏫<br>Comment puis-je t'aider ?`,
+    erreur: "❌ Erreur serveur. Vérifie que l'API est en cours d'exécution.",
+    btnLangue: '🇫🇷 FR'
+  },
+  en: {
+    placeholder: 'Type your message here...',
+    envoyer: '✈️ Send',
+    nouveauChat: '🔄 New Chat',
+    retour: '← Back Home',
+    personnalites: '🤖 Personalities',
+    historique: '📜 History',
+    salut: (label) => `Hey! I'm your ${label} 👨‍🏫<br>How can I help you?`,
+    erreur: '❌ Server error. Make sure the API is running.',
+    btnLangue: '🇬🇧 EN'
+  }
 };
 
 // ===== VARIABLES D'ETAT =====
 let personnaliteActive = localStorage.getItem('personnaliteActive') || 'France';
+let langueActive = localStorage.getItem('langueActive') || 'fr';
 let messagesActuels = [];
 
-// ===== DOM ELEMENTS =====
-const zoneChat = document.getElementById('zone-chat');
-const champTexte = document.getElementById('champ-texte');
-const boutonEnvoyer = document.getElementById('bouton-envoyer');
-const headerPersonnalite = document.querySelector('header .personality');
-const avion = document.getElementById('avion');
+// ===== DOM ELEMENTS (set in initApp) =====
+let zoneChat, champTexte, boutonEnvoyer, headerPersonnalite;
 
 // ===== INITIALISATION =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -39,11 +63,49 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
+  zoneChat = document.getElementById('zone-chat');
+  champTexte = document.getElementById('champ-texte');
+  boutonEnvoyer = document.getElementById('bouton-envoyer');
+  headerPersonnalite = document.querySelector('header .personality');
+
+  appliquerLangue();
   mettreAJourHeader();
   chargerHistoriqueChat();
+
   boutonEnvoyer.addEventListener('click', envoyerMessage);
   champTexte.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') envoyerMessage();
+  });
+  champTexte.focus();
+}
+
+// ===== LANGUE =====
+function toggleLangue() {
+  langueActive = langueActive === 'fr' ? 'en' : 'fr';
+  localStorage.setItem('langueActive', langueActive);
+  appliquerLangue();
+}
+
+function appliquerLangue() {
+  const t = LANGUES[langueActive];
+
+  const btnLangue = document.getElementById('btn-langue');
+  if (btnLangue) btnLangue.textContent = t.btnLangue;
+
+  const envoyerText = document.getElementById('envoyer-text');
+  if (envoyerText) envoyerText.textContent = langueActive === 'fr' ? 'Envoyer' : 'Send';
+
+  if (champTexte) champTexte.placeholder = t.placeholder;
+
+  const btnNewChat = document.querySelector('.btn-new-chat[data-action="new"]');
+  if (btnNewChat) btnNewChat.textContent = t.nouveauChat;
+
+  const btnRetour = document.querySelector('.btn-new-chat[data-action="retour"]');
+  if (btnRetour) btnRetour.textContent = t.retour;
+
+  document.querySelectorAll('aside h3').forEach((h, i) => {
+    if (i === 0) h.textContent = t.personnalites;
+    if (i === 1) h.textContent = t.historique;
   });
 }
 
@@ -145,7 +207,8 @@ async function envoyerMessage() {
   avionVolant.textContent = '✈️';
   avionVolant.style.left = (btnRect.left + btnRect.width / 2) + 'px';
   avionVolant.style.top = (btnRect.top + btnRect.height / 2) + 'px';
-  document.getElementById('conteneur-avions').appendChild(avionVolant);
+  const conteneur = document.getElementById('conteneur-avions');
+  if (conteneur) conteneur.appendChild(avionVolant);
 
   // Animation
   setTimeout(() => {
@@ -172,7 +235,7 @@ async function envoyerMessage() {
       + '<hr class="joke-sep"><em class="joke-text">' + escapeHtml(data.joke) + '</em>';
     ajouterMessage('bot', rep);
   } catch (error) {
-    ajouterMessage('bot', '❌ Erreur serveur. Vérifie que l\'API est en cours d\'exécution.');
+    ajouterMessage('bot', LANGUES[langueActive].erreur);
   }
 }
 
@@ -196,78 +259,7 @@ function demarrerNouveauChat() {
   messagesActuels = [];
   zoneChat.innerHTML = '';
   champTexte.value = '';
-  ajouterMessage('bot', `Salut ! Je suis ton ${PERSONNALITES[personnaliteActive].label.toLowerCase()} 👨‍🏫<br>Comment puis-je t'aider ?`);
-}
-
-// ===== 20 JEUX BONUS =====
-const JEUX_BONUS = [
-  { nom: 'Snake', icon: '🐍' },
-  { nom: 'Tetris', icon: '🧩' },
-  { nom: 'Flappy', icon: '🐦' },
-  { nom: 'Pac-Man', icon: '👻' },
-  { nom: 'Space', icon: '👾' },
-  { nom: 'Dino Run', icon: '🦖' },
-  { nom: 'Brick', icon: '🧱' },
-  { nom: 'Pong', icon: '🏓' },
-  { nom: 'Memory', icon: '🧠' },
-  { nom: 'Mines', icon: '💣' },
-  { nom: 'Chess', icon: '♟️' },
-  { nom: 'Connect4', icon: '🔴' },
-  { nom: 'Sudoku', icon: '🔢' },
-  { nom: 'Match3', icon: '💎' },
-  { nom: 'Tic Tac', icon: '❌' },
-  { nom: 'Dice', icon: '🎲' },
-  { nom: 'Blackjack', icon: '🎰' },
-  { nom: 'Quiz', icon: '❓' },
-  { nom: 'Boom', icon: '💥' },
-  { nom: 'Pilot', icon: '✈️' }
-];
-
-function afficherJeuxBonus() {
-  const modal = document.getElementById('modal-jeux-bonus');
-  const grille = document.getElementById('grille-jeux');
-
-  const JEUX_FONCTIONS = {
-    'Snake': lancerSnake,
-    'Tetris': lancerTetris,
-    'Flappy': lancerFlappy,
-    'Pac-Man': lancerPacman,
-    'Space': lancerSpace,
-    'Dino Run': lancerDino,
-    'Brick': lancerBrick,
-    'Pong': lancerPong,
-    'Memory': lancerMemory,
-    'Mines': lancerMines,
-    'Chess': lancerChess,
-    'Connect4': lancerConnect4,
-    'Sudoku': lancerSudoku,
-    'Match3': lancerMatch3,
-    'Tic Tac': lancerTicTac,
-    'Dice': lancerDice,
-    'Blackjack': lancerBlackjack,
-    'Quiz': lancerQuiz,
-    'Boom': lancerBoom,
-    'Pilot': lancerPilot
-  };
-
-  grille.innerHTML = '';
-  JEUX_BONUS.forEach(jeu => {
-    const div = document.createElement('div');
-    div.className = 'jeu-bonus';
-    const func = JEUX_FONCTIONS[jeu.nom];
-    div.onclick = func || (() => alert(`🎮 ${jeu.nom} - Erreur!`));
-    div.innerHTML = `
-      <div class="jeu-bonus-icon">${jeu.icon}</div>
-      <div class="jeu-bonus-nom">${jeu.nom}</div>
-    `;
-    grille.appendChild(div);
-  });
-
-  modal.classList.add('active');
-}
-
-function fermerJeuxBonus() {
-  document.getElementById('modal-jeux-bonus').classList.remove('active');
+  ajouterMessage('bot', LANGUES[langueActive].salut(PERSONNALITES[personnaliteActive].label.toLowerCase()));
 }
 
 // ===== HISTORIQUE =====

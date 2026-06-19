@@ -11,9 +11,10 @@
 
   <!-- HEADER -->
   <header>
-    <img src="assets/saros.jpg" alt="TOKYO Logo" onclick="afficherJeuxBonus()" style="cursor: pointer;" title="Clique pour 20 jeux bonus!" />
+    <img src="assets/saros.jpg" alt="TOKYO Logo" />
     <h1>TOKYO</h1>
     <div class="personality">🇫🇷 Prof de France</div>
+    <button id="btn-langue" class="btn-langue" onclick="toggleLangue()" title="Changer la langue">🇫🇷 FR</button>
   </header>
 
   <!-- MAIN CONTENT -->
@@ -21,12 +22,12 @@
     <!-- SIDEBAR -->
     <aside>
       <!-- Retour Accueil -->
-      <button class="btn-new-chat" onclick="window.location.href='index.html'" style="background: linear-gradient(135deg, #FF6347, #FF4500); margin-bottom: 0.5rem;">
+      <button class="btn-new-chat" data-action="retour" onclick="window.location.href='index.html'" style="background: linear-gradient(135deg, #FF6347, #FF4500); margin-bottom: 0.5rem;">
         ← Retour Accueil
       </button>
 
       <!-- Nouveau Chat -->
-      <button class="btn-new-chat" onclick="demarrerNouveauChat()">
+      <button class="btn-new-chat" data-action="new" onclick="demarrerNouveauChat()">
         🔄 Nouveau Chat
       </button>
 
@@ -51,6 +52,9 @@
         <button class="btn-personality" data-personality="Animes" onclick="changerPersonnalite('Animes')">
           🎬 Expert Animes
         </button>
+        <button class="btn-personality" data-personality="Révision" onclick="changerPersonnalite('Révision')">
+          📝 Fiche de Révision
+        </button>
       </div>
 
       <!-- Historique -->
@@ -68,7 +72,7 @@
       <div class="form-chat">
         <input id="champ-texte" type="text" placeholder="Écris ton message ici..." />
         <button id="bouton-envoyer" type="button">
-          <span id="avion">✈️</span> Envoyer
+          <span id="avion">✈️</span> <span id="envoyer-text">Envoyer</span>
         </button>
       </div>
     </div>
@@ -77,21 +81,8 @@
   <!-- Conteneur pour avions volants -->
   <div id="conteneur-avions"></div>
 
-  <!-- MODAL JEUX BONUS -->
-  <div id="modal-jeux-bonus" class="modal">
-    <div class="modal-content-games">
-      <button class="btn-close-games" onclick="fermerJeuxBonus()">✕</button>
-      <h2>🎮 20 JEUX BONUS 🎮</h2>
-      <div class="grille-jeux" id="grille-jeux"></div>
-    </div>
-  </div>
-
-  <!-- MODAL MINI JEU -->
-  <div id="modal-jeu" class="modal" style="display: none;"></div>
-
   <!-- nginx proxies /ask to the backend container — empty string means same-origin -->
   <script>window.TOKYO_API_URL = '';</script>
-  <script src="js/games_bonus.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

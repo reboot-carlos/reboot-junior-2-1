@@ -38,23 +38,23 @@ header {
   flex-shrink: 0; /* never compress — gives #zone-chat a stable remaining height */
   width: 100%;
   background: radial-gradient(circle at 50% 50%, var(--gold-light) 0%, var(--orange) 40%, var(--dark) 100%);
-  padding: 1rem 2rem;
+  padding: 0.5rem 1.2rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  box-shadow: 0 0 30px rgba(218, 165, 32, 0.5);
+  gap: 0.8rem;
+  box-shadow: 0 0 20px rgba(218, 165, 32, 0.4);
   border-bottom: 2px solid var(--primary);
 }
 
 header img {
-  width: 60px;
-  height: 70px;
-  border-radius: 8px;
-  box-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
+  width: 38px;
+  height: 44px;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(218, 165, 32, 0.4);
 }
 
 header h1 {
-  font-size: 2.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   animation: bougeTitre 3s ease-in-out infinite;
@@ -62,9 +62,27 @@ header h1 {
 
 header .personality {
   margin-left: auto;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.8);
   text-align: right;
+}
+
+.btn-langue {
+  flex-shrink: 0;
+  padding: 0.3rem 0.7rem;
+  background: transparent;
+  color: var(--gold-light);
+  border: 2px solid var(--primary);
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-langue:hover {
+  background: rgba(218, 165, 32, 0.15);
 }
 
 /* ===== ANIMATIONS ===== */
@@ -106,34 +124,34 @@ main {
 /* ===== SIDEBAR ===== */
 aside {
   flex-shrink: 0; /* never compress in the row flex */
-  width: 280px;
+  width: 220px;
   background: linear-gradient(180deg, rgba(56, 56, 63, 0.9) 0%, rgba(21, 21, 30, 0.95) 100%);
   border-right: 2px solid var(--primary);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 1.5rem 1rem;
-  gap: 1rem;
+  padding: 0.8rem 0.7rem;
+  gap: 0.6rem;
 }
 
 aside h3 {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: var(--gold-light);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--primary);
-  padding-bottom: 0.8rem;
+  padding-bottom: 0.4rem;
 }
 
 .sidebar-section {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.4rem;
 }
 
 .btn-new-chat {
-  padding: 0.8rem;
+  padding: 0.5rem;
   background: linear-gradient(135deg, var(--primary), var(--orange));
   color: #000;
   border: none;
@@ -141,6 +159,7 @@ aside h3 {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s;
+  font-size: 0.85rem;
 }
 
 .btn-new-chat:hover {
@@ -149,7 +168,7 @@ aside h3 {
 }
 
 .btn-personality, .btn-history {
-  padding: 0.7rem;
+  padding: 0.4rem 0.6rem;
   background: transparent;
   color: var(--gold-light);
   border: 2px solid var(--primary);
@@ -157,7 +176,7 @@ aside h3 {
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .btn-personality:hover, .btn-history:hover {
@@ -196,8 +215,8 @@ aside h3 {
   flex-direction: column;
   background: linear-gradient(rgba(56, 56, 63, 0.95), rgba(56, 56, 63, 0.95)),
               url('../assets/saros.jpg') center/cover;
-  padding: 1.5rem;
-  gap: 1rem;
+  padding: 0.8rem;
+  gap: 0.6rem;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -206,9 +225,10 @@ aside h3 {
   /* Never exceed 72% of chat zone width; never be narrower than a short word */
   max-width: 72%;
   min-width: 60px;
-  padding: 0.9rem 1.2rem;
-  border-radius: 12px;
-  line-height: 1.6;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  line-height: 1.5;
+  font-size: 0.92rem;
   overflow-wrap: break-word;
   word-break: break-word;
   /* DO NOT set overflow:hidden — it breaks align-self:flex-start width containment */
@@ -267,8 +287,8 @@ aside h3 {
 .form-chat {
   flex-shrink: 0; /* never compress — always stays at full height at the bottom */
   display: flex;
-  gap: 0.8rem;
-  padding: 1.5rem;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
   background: rgba(21, 21, 30, 0.9);
   border-top: 2px solid var(--primary);
 }
@@ -276,12 +296,12 @@ aside h3 {
 #champ-texte {
   flex: 1;
   min-width: 0; /* allows input to shrink in flex container */
-  padding: 0.8rem 1rem;
+  padding: 0.55rem 0.9rem;
   background: var(--gray);
   color: var(--white);
   border: 2px solid transparent;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: border-color 0.2s;
 }
 
@@ -296,7 +316,7 @@ aside h3 {
 
 #bouton-envoyer {
   flex-shrink: 0; /* never shrink — always stays full size */
-  padding: 0.8rem 1.5rem;
+  padding: 0.55rem 1.1rem;
   background: linear-gradient(135deg, var(--primary), var(--orange));
   color: #000;
   border: none;
@@ -529,142 +549,6 @@ aside h3 {
 
 .modal-btn:hover {
   transform: translateY(-2px);
-}
-
-/* ===== MODAL JEUX BONUS ===== */
-#modal-jeux-bonus.active {
-  display: flex;
-}
-
-.modal-content-games {
-  background: var(--dark);
-  border: 3px solid var(--primary);
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 900px;
-  width: 90%;
-  max-height: 85vh;
-  overflow-y: auto;
-  position: relative;
-}
-
-.modal-content-games h2 {
-  text-align: center;
-  color: var(--gold-light);
-  margin-bottom: 2rem;
-  font-size: 2rem;
-  text-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
-}
-
-.btn-close-games {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: var(--primary);
-  color: #000;
-  border: none;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-close-games:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
-}
-
-.grille-jeux {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
-}
-
-.jeu-bonus {
-  background: linear-gradient(135deg, rgba(218, 165, 32, 0.2), rgba(255, 165, 0, 0.2));
-  border: 2px solid var(--primary);
-  border-radius: 10px;
-  padding: 1.5rem 1rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.jeu-bonus:hover {
-  background: linear-gradient(135deg, rgba(218, 165, 32, 0.4), rgba(255, 165, 0, 0.4));
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(218, 165, 32, 0.4);
-}
-
-.jeu-bonus-icon {
-  font-size: 2.5rem;
-}
-
-.jeu-bonus-nom {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--white);
-}
-
-/* ===== MODAL MINI JEU ===== */
-#modal-jeu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.95);
-  z-index: 10000;
-  align-items: center;
-  justify-content: center;
-}
-
-.jeu-container {
-  background: var(--gray);
-  border: 3px solid var(--primary);
-  border-radius: 15px;
-  padding: 2.5rem;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  text-align: center;
-  box-shadow: 0 0 30px rgba(218, 165, 32, 0.5);
-}
-
-.jeu-container h3 {
-  color: var(--gold-light);
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  text-shadow: 0 0 10px rgba(218, 165, 32, 0.4);
-}
-
-.jeu-container p {
-  color: var(--white);
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-
-.jeu-container button {
-  padding: 0.8rem 1.5rem;
-  margin: 0.5rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 0.95rem;
-}
-
-.jeu-container button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* ===== RESPONSIVE ===== */
